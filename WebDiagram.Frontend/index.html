@@ -26,6 +26,13 @@
 
     // Startposition des Viewport
     const viewPort = { xMin: 0, yMin: 0, xMax: 4, yMax: 4 };
+    let margin = { top: 0, bottom: 0, left: 0, right: 0 };
+
+    fetch("http://localhost:5000/config")
+        .then(res => res.json())
+        .then(cfg => {
+            margin = cfg.margin;
+      });
 
     function updateImage() {
     const url = `http://localhost:5000/render?xMin=${viewPort.xMin}&xMax=${viewPort.xMax}&yMin=${viewPort.yMin}&yMax=${viewPort.yMax}`;
@@ -67,9 +74,9 @@
     let lastMousePos = { x: 0, y: 0 };
 
     img.addEventListener("mousedown", (e) => {
-    isDragging = true;
-    lastMousePos = { x: e.clientX, y: e.clientY };
-    e.preventDefault();
+        isDragging = true;
+        lastMousePos = { x: e.clientX, y: e.clientY };
+        e.preventDefault();
     });
 
     window.addEventListener("mouseup", () => {
@@ -84,8 +91,8 @@
 
     lastMousePos = { x: e.clientX, y: e.clientY };
 
-    const widthPx = img.naturalWidth - 80;
-    const heightPx = img.naturalHeight - 80;
+    const widthPx = img.naturalWidth - margin.left - margin.right;
+    const heightPx = img.naturalHeight - margin.top - margin.bottom;
 
     const xRange = viewPort.xMax - viewPort.xMin;
     const yRange = viewPort.yMax - viewPort.yMin;
@@ -101,6 +108,79 @@
 
     updateImage();
     });
+
+    const zoomFactor = 1.1;
+    img.addEventListener('wheel', function (e) {
+        const rect = img.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const imageHeight = rect.height;
+
+        // Prüfen, ob Maus in unterer Margin ist
+        if (mouseY >= imageHeight - margin.bottom) {
+            const width = viewPort.xMax - viewPort.xMin;
+            const worldX = viewPort.xMin + ((mouseX - margin.left) / (rect.width - margin.left - margin.right)) * width;
+            const scale = (e.deltaY < 0) ? (1 / zoomFactor) : zoomFactor;
+            const newWidth = width * scale;
+            const newXMin = worldX - ((mouseX - margin.left) / (rect.width - margin.left - margin.right)) * newWidth;
+            viewPort.xMin = newXMin;
+            viewPort.xMax = newXMin + newWidth;
+
+            updateImage();
+
+            e.preventDefault(); // Seiten-Scroll verhindern
+        }
+    });
+    img.addEventListener('wheel', function (e) {
+        const rect = img.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const imageWidth = rect.width;
+
+        // Prüfen, ob Maus im linken Margin-Bereich ist
+        if (mouseX <= margin.left) {
+            const height = viewPort.yMax - viewPort.yMin;
+            const worldY = viewPort.yMax - ((mouseY - margin.top) / (rect.height - margin.top - margin.bottom)) * height;
+            const scale = (e.deltaY < 0) ? (1 / zoomFactor) : zoomFactor;
+            const newHeight = height * scale;
+            const newYMax = worldY + ((mouseY - margin.top) / (rect.height - margin.top - margin.bottom)) * newHeight;
+            viewPort.yMin = newYMax - newHeight;
+            viewPort.yMax = newYMax;
+
+            updateImage();
+
+            e.preventDefault(); // Seiten-Scroll verhindern
+        }
+    });
+
+    img.addEventListener('wheel', function (e) {
+    const rect = img.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const insideHorizontal = mouseX > margin.left && mouseX < (rect.width - margin.right);
+    const insideVertical = mouseY > margin.top && mouseY < (rect.height - margin.bottom);
+
+    if (insideHorizontal && insideVertical) {
+        const width = viewPort.xMax - viewPort.xMin;
+        const height = viewPort.yMax - viewPort.yMin;
+        const worldX = viewPort.xMin + ((mouseX - margin.left) / (rect.width - margin.left - margin.right)) * width;
+        const worldY = viewPort.yMax - ((mouseY - margin.top) / (rect.height - margin.top - margin.bottom)) * height;
+        const scale = (e.deltaY < 0) ? (1 / zoomFactor) : zoomFactor;
+        const newWidth = width * scale;
+        const newHeight = height * scale;
+        const newXMin = worldX - ((mouseX - margin.left) / (rect.width - margin.left - margin.right)) * newWidth;
+        const newYMax = worldY + ((mouseY - margin.top) / (rect.height - margin.top - margin.bottom)) * newHeight;
+        viewPort.xMin = newXMin;
+        viewPort.xMax = newXMin + newWidth;
+        viewPort.yMin = newYMax - newHeight;
+        viewPort.yMax = newYMax;
+
+        updateImage();
+
+        e.preventDefault(); // Seiten-Scroll verhindern
+    }
+});
   </script>
 </body>
 </html>

@@ -20,7 +20,7 @@
 <body>
   <h1>WebDiagram</h1>
   <p>Pfeiltasten bewegen den ViewPort. Bild wird vom Server gerendert.</p>
-  <img id="view" width="400" height="300" />
+  <img id="view" width="600" height="400" />
   <script>
     const img = document.getElementById("view");
 
@@ -28,55 +28,55 @@
     const viewPort = { xMin: 0, yMin: 0, xMax: 4, yMax: 4 };
 
     function updateImage() {
-      const url = `http://localhost:5000/render?xMin=${viewPort.xMin}&xMax=${viewPort.xMax}&yMin=${viewPort.yMin}&yMax=${viewPort.yMax}`;
-      img.src = url;
+    const url = `http://localhost:5000/render?xMin=${viewPort.xMin}&xMax=${viewPort.xMax}&yMin=${viewPort.yMin}&yMax=${viewPort.yMax}`;
+    img.src = url;
     }
 
     // Initiales Bild
     updateImage();
 
     // Tastatureingaben auswerten
-    const stepX = .02;
-    const stepY = .02;
+    const stepX = 0.02;
+    const stepY = 0.02;
     document.addEventListener("keydown", (e) => {
-      switch (e.key) {
-      case 'ArrowLeft':
+    switch (e.key) {
+        case 'ArrowLeft':
         viewPort.xMin += stepX;
         viewPort.xMax += stepX;
         break;
-      case 'ArrowRight':
+        case 'ArrowRight':
         viewPort.xMin -= stepX;
         viewPort.xMax -= stepX;
         break;
-      case 'ArrowUp':
+        case 'ArrowUp':
         viewPort.yMin -= stepY;
         viewPort.yMax -= stepY;
         break;
-      case 'ArrowDown':
+        case 'ArrowDown':
         viewPort.yMin += stepY;
         viewPort.yMax += stepY;
         break;
-      default:
+        default:
         return;
     }
-      updateImage();
+    updateImage();
     });
 
     // Maus-Drag-Steuerung
-  let isDragging = false;
-  let lastMousePos = { x: 0, y: 0 };
+    let isDragging = false;
+    let lastMousePos = { x: 0, y: 0 };
 
-  img.addEventListener("mousedown", (e) => {
+    img.addEventListener("mousedown", (e) => {
     isDragging = true;
     lastMousePos = { x: e.clientX, y: e.clientY };
     e.preventDefault();
-  });
+    });
 
-  window.addEventListener("mouseup", (e) => {
+    window.addEventListener("mouseup", () => {
     isDragging = false;
-  });
+    });
 
-  window.addEventListener("mousemove", (e) => {
+    window.addEventListener("mousemove", (e) => {
     if (!isDragging) return;
 
     const dx = e.clientX - lastMousePos.x;
@@ -84,24 +84,23 @@
 
     lastMousePos = { x: e.clientX, y: e.clientY };
 
-    // Viewport-Größe in Pixeln (Breite/Höhe des Bildes)
-    const widthPx = img.width;
-    const heightPx = img.height;
+    const widthPx = img.naturalWidth - 80;
+    const heightPx = img.naturalHeight - 80;
 
-    // Verschiebung in Viewport-Koordinaten umrechnen
     const xRange = viewPort.xMax - viewPort.xMin;
     const yRange = viewPort.yMax - viewPort.yMin;
 
-    // Maus bewegt sich rechts => Viewport muss nach links => xMin & xMax erhöhen
-    viewPort.xMin -= (dx / widthPx) * xRange;
-    viewPort.xMax -= (dx / widthPx) * xRange;
+    const scaleX = xRange / widthPx;
+    const scaleY = yRange / heightPx;
 
-    // Maus bewegt sich runter => Viewport nach oben => yMin & yMax verringern (wegen Canvas-Koordinaten)
-    viewPort.yMin += (dy / heightPx) * yRange;
-    viewPort.yMax += (dy / heightPx) * yRange;
+    viewPort.xMin -= dx * scaleX;
+    viewPort.xMax -= dx * scaleX;
+
+    viewPort.yMin += dy * scaleY;
+    viewPort.yMax += dy * scaleY;
 
     updateImage();
-  });
+    });
   </script>
 </body>
 </html>

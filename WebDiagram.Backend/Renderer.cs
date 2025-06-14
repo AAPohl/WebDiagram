@@ -5,8 +5,8 @@ public static class Renderer
 {
     public static byte[] RenderCameraView(float xMin, float xMax, float yMin, float yMax)
     {
-        int width = 400;
-        int height = 300;
+        int width = 600;
+        int height = 400;
         int margin = 40;
 
         using var bitmap = new SKBitmap(width, height);
@@ -30,7 +30,7 @@ public static class Renderer
 
         DrawSine(canvas, margin, width, height, pixelsPerXUnit, pixelsPerYUnit, xMin, xMax, yMin, yMax, 0.5f, 2f, (float)Math.PI / 4, SKColors.Green);
 
-        DrawCross(canvas, 1f, 0.5f, margin, width, height, xMin, xMax, yMin, yMax, 5, SKColors.Blue);
+        DrawCross(canvas, 1f, 0.5f, margin, width, height, pixelsPerXUnit, pixelsPerYUnit, xMin, xMax, yMin, yMax, 5, SKColors.Blue);
 
         DrawLabel(canvas, margin, margin / 2, $"View X:[{xMin:0.00},{xMax:0.00}] Y:[{yMin:0.00},{yMax:0.00}]");
 
@@ -151,47 +151,48 @@ public static class Renderer
     float xMin, float xMax, float yMin, float yMax,
     float amplitude, float frequency, float phase,
     SKColor color)
+{
+    using var paint = new SKPaint
     {
-        using var paint = new SKPaint
+        Color = color,
+        StrokeWidth = 2,
+        IsAntialias = true,
+        Style = SKPaintStyle.Stroke
+    };
+
+    using var path = new SKPath();
+    bool started = false;
+
+    int pointCount = width - 2 * (int)margin; // Zeichne pro Pixel innerhalb der Box
+
+    float xRange = xMax - xMin;
+    float originY = height - margin + yMin * pixelsPerYUnit; // y=0 in Pixeln
+
+    for (int i = 0; i <= pointCount; i++)
+    {
+        // x linear interpolieren über den Bereich [xMin, xMax]
+        float x = xMin + (xRange * i) / pointCount;
+
+        // Y-Wert der Funktion relativ zum aktuellen Viewport
+        float y = yMin + amplitude * MathF.Sin(frequency * x + phase);
+
+        // Pixelkoordinaten berechnen
+        float px = margin + (x - xMin) * pixelsPerXUnit;
+        float py = originY - (y - yMin) * pixelsPerYUnit;
+
+        if (!started)
         {
-            Color = color,
-            StrokeWidth = 2,
-            IsAntialias = true,
-            Style = SKPaintStyle.Stroke
-        };
-
-        using var path = new SKPath();
-        bool started = false;
-
-        int pointCount = width - 2 * (int)margin; // Zeichne pro Pixel innerhalb der Box
-
-        float xRange = xMax - xMin;
-        float originY = height - margin + yMin * pixelsPerYUnit; // y-Nullpunkt
-
-        for (int i = 0; i <= pointCount; i++)
-        {
-            // x linear interpolieren über den Bereich [xMin, xMax]
-            float x = xMin + (xRange * i) / pointCount;
-
-            float y = amplitude * MathF.Sin(frequency * x + phase);
-
-            // Pixelkoordinaten relativ zum linken Margin
-            float px = margin + (x - xMin) * pixelsPerXUnit;
-            float py = originY - (y - yMin) * pixelsPerYUnit;
-
-            if (!started)
-            {
-                path.MoveTo(px, py);
-                started = true;
-            }
-            else
-            {
-                path.LineTo(px, py);
-            }
+            path.MoveTo(px, py);
+            started = true;
         }
-
-        canvas.DrawPath(path, paint);
+        else
+        {
+            path.LineTo(px, py);
+        }
     }
+
+    canvas.DrawPath(path, paint);
+}
 
 
     private static void DrawLabel(SKCanvas canvas, int x, int y, string text)
@@ -214,15 +215,13 @@ public static class Renderer
     
     private static void DrawCross(SKCanvas canvas, float x, float y,
     float margin, int width, int height,
+    float pixelsPerXUnit, float pixelsPerYUnit,
     float xMin, float xMax, float yMin, float yMax,
     float size, SKColor color)
 {
-    float pixelsPerXUnit = (width - 2 * margin) / (xMax - xMin);
-    float pixelsPerYUnit = (height - 2 * margin) / (yMax - yMin);
-
+    // Weltkoordinaten → Pixelkoordinaten
     float px = margin + (x - xMin) * pixelsPerXUnit;
-    float originY = height - margin + yMin * pixelsPerYUnit;
-    float py = originY - (y - yMin) * pixelsPerYUnit;
+    float py = height - margin - (y - yMin) * pixelsPerYUnit;
 
     using var paint = new SKPaint
     {
@@ -234,6 +233,7 @@ public static class Renderer
     canvas.DrawLine(px - size, py - size, px + size, py + size, paint);
     canvas.DrawLine(px - size, py + size, px + size, py - size, paint);
 }
+
 
 
 }

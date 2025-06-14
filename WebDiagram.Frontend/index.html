@@ -19,34 +19,87 @@
 </head>
 <body>
   <h1>WebDiagram</h1>
-  <p>Pfeiltasten bewegen die Kamera in X/Z-Richtung. Bild wird vom Server gerendert.</p>
-  <img id="view" width="400" height="300" />
+  <p>Pfeiltasten bewegen den ViewPort. Bild wird vom Server gerendert.</p>
+  <img id="view" width="600" height="400" />
   <script>
     const img = document.getElementById("view");
 
-    // Startposition der Kamera
-    const cam = { x: 0, y: 0, z: 5 };
+    // Startposition des Viewport
+    const viewPort = { xMin: 0, yMin: 0, xMax: 4, yMax: 4 };
 
     function updateImage() {
-      const url = `http://localhost:5000/render?x=${cam.x}&y=${cam.y}&z=${cam.z}`;
-      img.src = url;
+    const url = `http://localhost:5000/render?xMin=${viewPort.xMin}&xMax=${viewPort.xMax}&yMin=${viewPort.yMin}&yMax=${viewPort.yMax}`;
+    img.src = url;
     }
 
     // Initiales Bild
     updateImage();
 
     // Tastatureingaben auswerten
+    const stepX = 0.02;
+    const stepY = 0.02;
     document.addEventListener("keydown", (e) => {
-      switch (e.key) {
-        case "ArrowUp": cam.z -= 1; break;
-        case "ArrowDown": cam.z += 1; break;
-        case "ArrowLeft": cam.x -= 1; break;
-        case "ArrowRight": cam.x += 1; break;
-        case "w": cam.y += 1; break;
-        case "s": cam.y -= 1; break;
-        default: return; // ignorieren
-      }
-      updateImage();
+    switch (e.key) {
+        case 'ArrowLeft':
+        viewPort.xMin += stepX;
+        viewPort.xMax += stepX;
+        break;
+        case 'ArrowRight':
+        viewPort.xMin -= stepX;
+        viewPort.xMax -= stepX;
+        break;
+        case 'ArrowUp':
+        viewPort.yMin -= stepY;
+        viewPort.yMax -= stepY;
+        break;
+        case 'ArrowDown':
+        viewPort.yMin += stepY;
+        viewPort.yMax += stepY;
+        break;
+        default:
+        return;
+    }
+    updateImage();
+    });
+
+    // Maus-Drag-Steuerung
+    let isDragging = false;
+    let lastMousePos = { x: 0, y: 0 };
+
+    img.addEventListener("mousedown", (e) => {
+    isDragging = true;
+    lastMousePos = { x: e.clientX, y: e.clientY };
+    e.preventDefault();
+    });
+
+    window.addEventListener("mouseup", () => {
+    isDragging = false;
+    });
+
+    window.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+
+    const dx = e.clientX - lastMousePos.x;
+    const dy = e.clientY - lastMousePos.y;
+
+    lastMousePos = { x: e.clientX, y: e.clientY };
+
+    const widthPx = img.naturalWidth - 80;
+    const heightPx = img.naturalHeight - 80;
+
+    const xRange = viewPort.xMax - viewPort.xMin;
+    const yRange = viewPort.yMax - viewPort.yMin;
+
+    const scaleX = xRange / widthPx;
+    const scaleY = yRange / heightPx;
+
+    viewPort.xMin -= dx * scaleX;
+    viewPort.xMax -= dx * scaleX;
+
+    viewPort.yMin += dy * scaleY;
+    viewPort.yMax += dy * scaleY;
+
+    updateImage();
     });
   </script>
 </body>

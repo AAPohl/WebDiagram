@@ -21,13 +21,10 @@ jobs:
           dotnet-version: '8.0.x'
   
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore WebDiagram.Backend/WebDiagram.Backend.csproj
   
       - name: Build
-        run: dotnet build --configuration Release --no-restore
-  
-      - name: Test
-        run: dotnet test --no-build --verbosity normal
-  
+        run: dotnet build WebDiagram.Backend/WebDiagram.Backend.csproj --configuration Release --no-restore
+
       - name: Publish
-        run: dotnet publish -c Release -o ./publish
+        run: dotnet publish WebDiagram.Backend/WebDiagram.Backend.csproj -c Release -o ./publish

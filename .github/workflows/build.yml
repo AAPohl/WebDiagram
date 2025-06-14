@@ -12,5 +12,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 🧾 Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+  
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+  
+      - name: Restore Backend
+        run: dotnet restore WebDiagram.Backend/WebDiagram.Backend.csproj
+  
+      - name: Build Backend
+        run: dotnet build WebDiagram.Backend/WebDiagram.Backend.csproj --configuration Release --no-restore
+
+      - name: Publish Backend
+        run: dotnet publish WebDiagram.Backend/WebDiagram.Backend.csproj -c Release -o ./publish/Backend
+
+      - name: Publish Frontend
+        run: cp WebDiagram.Frontend/index.html ./publish/index.html
+        
+      - name: Upload Backend
+        uses: actions/upload-artifact@v4
+        with:
+          name: WebDiagram
+          path: ./publish

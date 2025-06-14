@@ -118,22 +118,11 @@
 
         // Prüfen, ob Maus in unterer Margin ist
         if (mouseY >= imageHeight - margin.bottom) {
-            // Aktueller Bildausschnitt (Weltkoordinaten)
             const width = viewPort.xMax - viewPort.xMin;
-
-            // Mausposition in Weltkoordinaten VOR Zoom
-            const worldXBefore = viewPort.xMin + (mouseX / rect.width) * width;
-
-            // Zoom-Faktor berechnen
+            const worldX = viewPort.xMin + ((mouseX - margin.left) / (rect.width - margin.left - margin.right)) * width;
             const scale = (e.deltaY < 0) ? (1 / zoomFactor) : zoomFactor;
-
-            // Neue Größe nach Zoom
             const newWidth = width * scale;
-
-            // Neue min-Werte berechnen, sodass der Weltpunkt unter der Maus fix bleibt
-            const newXMin = worldXBefore - (mouseX / rect.width) * newWidth;
-
-            // Setze neuen Ausschnitt
+            const newXMin = worldX - ((mouseX - margin.left) / (rect.width - margin.left - margin.right)) * newWidth;
             viewPort.xMin = newXMin;
             viewPort.xMax = newXMin + newWidth;
 
@@ -150,24 +139,13 @@
 
         // Prüfen, ob Maus im linken Margin-Bereich ist
         if (mouseX <= margin.left) {
-            // Aktueller Bildausschnitt (Weltkoordinaten)
             const height = viewPort.yMax - viewPort.yMin;
-
-            // Mausposition in Weltkoordinaten VOR Zoom
-            const worldYBefore = viewPort.yMin + (mouseY / rect.height) * height;
-
-            // Zoom-Faktor berechnen
+            const worldY = viewPort.yMax - ((mouseY - margin.top) / (rect.height - margin.top - margin.bottom)) * height;
             const scale = (e.deltaY < 0) ? (1 / zoomFactor) : zoomFactor;
-
-            // Neue Größe nach Zoom
             const newHeight = height * scale;
-
-            // Neue min-Werte berechnen, sodass der Weltpunkt unter der Maus fix bleibt
-            const newYMin = worldYBefore - (mouseY / rect.height) * newHeight;
-
-            // Setze neuen Ausschnitt
-            viewPort.yMin = newYMin;
-            viewPort.yMax = newYMin + newHeight;
+            const newYMax = worldY + ((mouseY - margin.top) / (rect.height - margin.top - margin.bottom)) * newHeight;
+            viewPort.yMin = newYMax - newHeight;
+            viewPort.yMax = newYMax;
 
             updateImage();
 
@@ -184,30 +162,19 @@
     const insideVertical = mouseY > margin.top && mouseY < (rect.height - margin.bottom);
 
     if (insideHorizontal && insideVertical) {
-        // Aktueller Bildausschnitt (Weltkoordinaten)
         const width = viewPort.xMax - viewPort.xMin;
         const height = viewPort.yMax - viewPort.yMin;
-
-        // Mausposition in Weltkoordinaten VOR Zoom
-        const worldXBefore = viewPort.xMin + (mouseX / rect.width) * width;
-        const worldYBefore = viewPort.yMin + (mouseY / rect.height) * height;
-
-        // Zoom-Faktor berechnen
+        const worldX = viewPort.xMin + ((mouseX - margin.left) / (rect.width - margin.left - margin.right)) * width;
+        const worldY = viewPort.yMax - ((mouseY - margin.top) / (rect.height - margin.top - margin.bottom)) * height;
         const scale = (e.deltaY < 0) ? (1 / zoomFactor) : zoomFactor;
-
-        // Neue Größe nach Zoom
         const newWidth = width * scale;
         const newHeight = height * scale;
-
-        // Neue min-Werte berechnen, sodass der Weltpunkt unter der Maus fix bleibt
-        const newXMin = worldXBefore - (mouseX / rect.width) * newWidth;
-        const newYMin = worldYBefore - (mouseY / rect.height) * newHeight;
-
-        // Setze neuen Ausschnitt
+        const newXMin = worldX - ((mouseX - margin.left) / (rect.width - margin.left - margin.right)) * newWidth;
+        const newYMax = worldY + ((mouseY - margin.top) / (rect.height - margin.top - margin.bottom)) * newHeight;
         viewPort.xMin = newXMin;
         viewPort.xMax = newXMin + newWidth;
-        viewPort.yMin = newYMin;
-        viewPort.yMax = newYMin + newHeight;
+        viewPort.yMin = newYMax - newHeight;
+        viewPort.yMax = newYMax;
 
         updateImage();
 

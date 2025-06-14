@@ -109,30 +109,68 @@
     updateImage();
     });
 
-    const stepZoom = 0.002;
+    const zoomFactor = 1.1;
     img.addEventListener('wheel', function (e) {
         const rect = img.getBoundingClientRect();
-        const mouseY = e.clientY - rect.top; // Position innerhalb des Bildes
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
         const imageHeight = rect.height;
 
         // Prüfen, ob Maus in unterer Margin ist
         if (mouseY >= imageHeight - margin.bottom) {
-            viewPort.xMax = viewPort.xMax + e.deltaY * stepZoom;
-            viewPort.xMin = viewPort.xMin - e.deltaY * stepZoom;
+            // Aktueller Bildausschnitt (Weltkoordinaten)
+            const width = viewPort.xMax - viewPort.xMin;
+
+            // Mausposition in Weltkoordinaten VOR Zoom
+            const worldXBefore = viewPort.xMin + (mouseX / rect.width) * width;
+
+            // Zoom-Faktor berechnen
+            const scale = (e.deltaY < 0) ? (1 / zoomFactor) : zoomFactor;
+
+            // Neue Größe nach Zoom
+            const newWidth = width * scale;
+
+            // Neue min-Werte berechnen, sodass der Weltpunkt unter der Maus fix bleibt
+            const newXMin = worldXBefore - (mouseX / rect.width) * newWidth;
+
+            // Setze neuen Ausschnitt
+            viewPort.xMin = newXMin;
+            viewPort.xMax = newXMin + newWidth;
+
             updateImage();
+
             e.preventDefault(); // Seiten-Scroll verhindern
         }
     });
     img.addEventListener('wheel', function (e) {
         const rect = img.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left; // Maus-X relativ zum Bild
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
         const imageWidth = rect.width;
 
         // Prüfen, ob Maus im linken Margin-Bereich ist
         if (mouseX <= margin.left) {
-            viewPort.yMax = viewPort.yMax + e.deltaY * stepZoom;
-            viewPort.yMin = viewPort.yMin - e.deltaY * stepZoom;
+            // Aktueller Bildausschnitt (Weltkoordinaten)
+            const height = viewPort.yMax - viewPort.yMin;
+
+            // Mausposition in Weltkoordinaten VOR Zoom
+            const worldYBefore = viewPort.yMin + (mouseY / rect.height) * height;
+
+            // Zoom-Faktor berechnen
+            const scale = (e.deltaY < 0) ? (1 / zoomFactor) : zoomFactor;
+
+            // Neue Größe nach Zoom
+            const newHeight = height * scale;
+
+            // Neue min-Werte berechnen, sodass der Weltpunkt unter der Maus fix bleibt
+            const newYMin = worldYBefore - (mouseY / rect.height) * newHeight;
+
+            // Setze neuen Ausschnitt
+            viewPort.yMin = newYMin;
+            viewPort.yMax = newYMin + newHeight;
+
             updateImage();
+
             e.preventDefault(); // Seiten-Scroll verhindern
         }
     });
@@ -146,11 +184,33 @@
     const insideVertical = mouseY > margin.top && mouseY < (rect.height - margin.bottom);
 
     if (insideHorizontal && insideVertical) {
-        viewPort.xMax = viewPort.xMax + e.deltaY * stepZoom;
-        viewPort.xMin = viewPort.xMin - e.deltaY * stepZoom;
-        viewPort.yMax = viewPort.yMax + e.deltaY * stepZoom;
-        viewPort.yMin = viewPort.yMin - e.deltaY * stepZoom;
+        // Aktueller Bildausschnitt (Weltkoordinaten)
+        const width = viewPort.xMax - viewPort.xMin;
+        const height = viewPort.yMax - viewPort.yMin;
+
+        // Mausposition in Weltkoordinaten VOR Zoom
+        const worldXBefore = viewPort.xMin + (mouseX / rect.width) * width;
+        const worldYBefore = viewPort.yMin + (mouseY / rect.height) * height;
+
+        // Zoom-Faktor berechnen
+        const scale = (e.deltaY < 0) ? (1 / zoomFactor) : zoomFactor;
+
+        // Neue Größe nach Zoom
+        const newWidth = width * scale;
+        const newHeight = height * scale;
+
+        // Neue min-Werte berechnen, sodass der Weltpunkt unter der Maus fix bleibt
+        const newXMin = worldXBefore - (mouseX / rect.width) * newWidth;
+        const newYMin = worldYBefore - (mouseY / rect.height) * newHeight;
+
+        // Setze neuen Ausschnitt
+        viewPort.xMin = newXMin;
+        viewPort.xMax = newXMin + newWidth;
+        viewPort.yMin = newYMin;
+        viewPort.yMax = newYMin + newHeight;
+
         updateImage();
+
         e.preventDefault(); // Seiten-Scroll verhindern
     }
 });

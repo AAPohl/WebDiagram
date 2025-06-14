@@ -29,8 +29,11 @@ jobs:
       - name: Publish Backend
         run: dotnet publish WebDiagram.Backend/WebDiagram.Backend.csproj -c Release -o ./publish/Backend
 
+      - name: Publish Frontend
+        run: cp WebDiagram.Frontend/index.html ./publish/index.html
+        
       - name: Upload Backend
         uses: actions/upload-artifact@v4
         with:
-          name: WebDiagram Backend
-          path: ./publish/Backend
+          name: WebDiagram
+          path: ./publish

@@ -32,7 +32,6 @@
         .then(res => res.json())
         .then(cfg => {
             margin = cfg.margin;
-        console.log("Margin vom Server:", margin);
       });
 
     function updateImage() {
@@ -75,9 +74,9 @@
     let lastMousePos = { x: 0, y: 0 };
 
     img.addEventListener("mousedown", (e) => {
-    isDragging = true;
-    lastMousePos = { x: e.clientX, y: e.clientY };
-    e.preventDefault();
+        isDragging = true;
+        lastMousePos = { x: e.clientX, y: e.clientY };
+        e.preventDefault();
     });
 
     window.addEventListener("mouseup", () => {
@@ -109,6 +108,52 @@
 
     updateImage();
     });
+
+    const stepZoom = 0.002;
+    img.addEventListener('wheel', function (e) {
+        const rect = img.getBoundingClientRect();
+        const mouseY = e.clientY - rect.top; // Position innerhalb des Bildes
+        const imageHeight = rect.height;
+
+        // Prüfen, ob Maus in unterer Margin ist
+        if (mouseY >= imageHeight - margin.bottom) {
+            viewPort.xMax = viewPort.xMax + e.deltaY * stepZoom;
+            viewPort.xMin = viewPort.xMin - e.deltaY * stepZoom;
+            updateImage();
+            e.preventDefault(); // Seiten-Scroll verhindern
+        }
+    });
+    img.addEventListener('wheel', function (e) {
+        const rect = img.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left; // Maus-X relativ zum Bild
+        const imageWidth = rect.width;
+
+        // Prüfen, ob Maus im linken Margin-Bereich ist
+        if (mouseX <= margin.left) {
+            viewPort.yMax = viewPort.yMax + e.deltaY * stepZoom;
+            viewPort.yMin = viewPort.yMin - e.deltaY * stepZoom;
+            updateImage();
+            e.preventDefault(); // Seiten-Scroll verhindern
+        }
+    });
+
+    img.addEventListener('wheel', function (e) {
+    const rect = img.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const insideHorizontal = mouseX > margin.left && mouseX < (rect.width - margin.right);
+    const insideVertical = mouseY > margin.top && mouseY < (rect.height - margin.bottom);
+
+    if (insideHorizontal && insideVertical) {
+        viewPort.xMax = viewPort.xMax + e.deltaY * stepZoom;
+        viewPort.xMin = viewPort.xMin - e.deltaY * stepZoom;
+        viewPort.yMax = viewPort.yMax + e.deltaY * stepZoom;
+        viewPort.yMin = viewPort.yMin - e.deltaY * stepZoom;
+        updateImage();
+        e.preventDefault(); // Seiten-Scroll verhindern
+    }
+});
   </script>
 </body>
 </html>

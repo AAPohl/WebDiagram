@@ -20,17 +20,17 @@ jobs:
         with:
           dotnet-version: '8.0.x'
   
-      - name: Restore
+      - name: Restore Backend
         run: dotnet restore WebDiagram.Backend/WebDiagram.Backend.csproj
   
-      - name: Build
+      - name: Build Backend
         run: dotnet build WebDiagram.Backend/WebDiagram.Backend.csproj --configuration Release --no-restore
 
-      - name: Publish
-        run: dotnet publish WebDiagram.Backend/WebDiagram.Backend.csproj -c Release -o ./publish
+      - name: Publish Backend
+        run: dotnet publish WebDiagram.Backend/WebDiagram.Backend.csproj -c Release -o ./publish/Backend
 
-      - name: Upload published build
+      - name: Upload Backend
         uses: actions/upload-artifact@v4
         with:
-          name: WebDiagram
-          path: ./publish
+          name: WebDiagram Backend
+          path: ./publish/Backend

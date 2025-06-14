@@ -19,16 +19,16 @@
 </head>
 <body>
   <h1>WebDiagram</h1>
-  <p>Pfeiltasten bewegen die Kamera in X/Z-Richtung. Bild wird vom Server gerendert.</p>
+  <p>Pfeiltasten bewegen den ViewPort. Bild wird vom Server gerendert.</p>
   <img id="view" width="400" height="300" />
   <script>
     const img = document.getElementById("view");
 
-    // Startposition der Kamera
-    const cam = { x: 0, y: 0, z: 5 };
+    // Startposition des Viewport
+    const viewPort = { xMin: 0, yMin: 0, xMax: 4, yMax: 4 };
 
     function updateImage() {
-      const url = `http://localhost:5000/render?x=${cam.x}&y=${cam.y}&z=${cam.z}`;
+      const url = `http://localhost:5000/render?xMin=${viewPort.xMin}&xMax=${viewPort.xMax}&yMin=${viewPort.yMin}&yMax=${viewPort.yMax}`;
       img.src = url;
     }
 
@@ -36,16 +36,29 @@
     updateImage();
 
     // Tastatureingaben auswerten
+    const stepX = .02;
+    const stepY = .02;
     document.addEventListener("keydown", (e) => {
       switch (e.key) {
-        case "ArrowUp": cam.z -= 1; break;
-        case "ArrowDown": cam.z += 1; break;
-        case "ArrowLeft": cam.x -= 1; break;
-        case "ArrowRight": cam.x += 1; break;
-        case "w": cam.y += 1; break;
-        case "s": cam.y -= 1; break;
-        default: return; // ignorieren
-      }
+      case 'ArrowLeft':
+        viewPort.xMin += stepX;
+        viewPort.xMax += stepX;
+        break;
+      case 'ArrowRight':
+        viewPort.xMin -= stepX;
+        viewPort.xMax -= stepX;
+        break;
+      case 'ArrowUp':
+        viewPort.yMin -= stepY;
+        viewPort.yMax -= stepY;
+        break;
+      case 'ArrowDown':
+        viewPort.yMin += stepY;
+        viewPort.yMax += stepY;
+        break;
+      default:
+        return;
+    }
       updateImage();
     });
   </script>

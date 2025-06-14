@@ -7,10 +7,10 @@ var app = builder.Build();
 
 app.UseCors(p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
-app.MapGet("/render", ([FromQuery] float x, [FromQuery] float y, [FromQuery] float z) =>
+app.MapGet("/render", ([FromQuery] float xMin, [FromQuery] float xMax, [FromQuery] float yMin, [FromQuery] float yMax) =>
 {
-    var pngBytes = Renderer.RenderCameraView(x, y, z);
-    return Results.File(pngBytes, "image/png");
+    var imgBytes = Renderer.RenderCameraView(xMin, xMax, yMin, yMax);
+    return Results.File(imgBytes, "image/png");
 });
 
 app.Run();

@@ -3,7 +3,7 @@ using System;
 
 public static class Renderer
 {
-    public static byte[] RenderCameraView(float x, float y, float z)
+    public static byte[] RenderCameraView(float xMin, float xMax, float yMin, float yMax)
     {
         int width = 400;
         int height = 300;
@@ -14,16 +14,22 @@ public static class Renderer
 
         ClearBackground(canvas);
         DrawAxes(canvas, width, height, margin);
-        DrawTicksAndLabels(canvas, width, height, margin);
+        DrawTicksAndLabels(canvas, width, height, margin, xMin, xMax, yMin, yMax);
 
-        float xRange = (float)(2 * Math.PI);
-        float yScale = 40f;
-        float xPixelsPerUnit = (width - 2 * margin) / xRange;
+        float pixelsPerXUnit = (width - 2 * margin) / (xMax - xMin);
+        float pixelsPerYUnit = (height - 2 * margin) / (yMax - yMin);
 
-        DrawSine(canvas, margin, height - margin, xPixelsPerUnit, yScale, 1f, 1f, 0f, SKColors.Red);
-        DrawSine(canvas, margin, height - margin, xPixelsPerUnit, yScale, 0.5f, 2f, (float)Math.PI / 4, SKColors.Green);
+        // Ursprung in Pixelkoordinaten
+        float originX = margin - xMin * pixelsPerXUnit;          // x=0 pixel-Position relativ zum margin
+        float originY = height - margin + yMin * pixelsPerYUnit; // y=0 pixel-Position relativ zum margin (invertiert y-Achse!)
 
-        DrawLabel(canvas, margin, margin / 2, $"Camera @ X:{x:0.0} Y:{y:0.0} Z:{z:0.0}");
+        // Die Achse bleibt an (margin, height-margin) für (xMin,yMin)
+        // Deshalb müssen wir Sinus-Kurven relativ zu (xMin,yMin) zeichnen
+
+        DrawSine(canvas, originX, originY, pixelsPerXUnit, pixelsPerYUnit, xMin, xMax, yMin, yMax, 1f, 1f, 0f, SKColors.Red);
+        DrawSine(canvas, originX, originY, pixelsPerXUnit, pixelsPerYUnit, xMin, xMax, yMin, yMax, 0.5f, 2f, (float)Math.PI / 4, SKColors.Green);
+
+        DrawLabel(canvas, margin, margin / 2, $"View X:[{xMin:0.00},{xMax:0.00}] Y:[{yMin:0.00},{yMax:0.00}]");
 
         using var image = SKImage.FromBitmap(bitmap);
         using var data = image.Encode(SKEncodedImageFormat.Png, 100);
@@ -59,28 +65,26 @@ public static class Renderer
 
     private static void DrawArrowHead(SKCanvas canvas, float x, float y, bool horizontal, SKPaint paint)
     {
-        paint.IsAntialias = true;
         float size = 10;
-
         using var path = new SKPath();
+
         if (horizontal)
         {
             path.MoveTo(x, y);
             path.LineTo(x - size, y - size / 2);
             path.LineTo(x - size, y + size / 2);
-            path.Close();
         }
         else
         {
             path.MoveTo(x, y);
             path.LineTo(x - size / 2, y + size);
             path.LineTo(x + size / 2, y + size);
-            path.Close();
         }
+        path.Close();
         canvas.DrawPath(path, paint);
     }
 
-    private static void DrawTicksAndLabels(SKCanvas canvas, int width, int height, int margin)
+    private static void DrawTicksAndLabels(SKCanvas canvas, int width, int height, int margin, float xMin, float xMax, float yMin, float yMax)
     {
         using var paint = new SKPaint
         {
@@ -88,7 +92,6 @@ public static class Renderer
             IsAntialias = true,
             StrokeWidth = 1,
             Style = SKPaintStyle.Stroke
-            // TextSize NICHT setzen!
         };
 
         using var font = new SKFont
@@ -101,51 +104,48 @@ public static class Renderer
         int originX = margin;
         int originY = height - margin;
         int tickSize = 4;
-        int tickSpacingX = 40;
-        int tickSpacingY = 20;
 
         var metrics = font.Metrics;
         float textHeight = metrics.Descent - metrics.Ascent;
 
-        // X-Achse Ticks + Beschriftung (0, π/2, π, ...)
-        for (int i = 0; i <= 6; i++)
+        float xRange = xMax - xMin;
+        float yRange = yMax - yMin;
+        float pixelsPerXUnit = (width - 2 * margin) / xRange;
+        float pixelsPerYUnit = (height - 2 * margin) / yRange;
+
+        // X-Achse Ticks - rund auf sinnvolle Schritte (hier grob 5 ticks)
+        int xTicksCount = 5;
+        for (int i = 0; i <= xTicksCount; i++)
         {
-            int xTick = originX + i * tickSpacingX;
-            if (xTick > width - margin) break;
+            float val = xMin + i * xRange / xTicksCount;
+            float px = originX + (val - xMin) * pixelsPerXUnit;
+            if (px < margin || px > width - margin) continue;
 
-            canvas.DrawLine(xTick, originY - tickSize, xTick, originY + tickSize, paint);
+            canvas.DrawLine(px, originY - tickSize, px, originY + tickSize, paint);
 
-            string label = i switch
-            {
-                0 => "0",
-                2 => "π",
-                4 => "2π",
-                _ when i % 2 == 1 => $"{i}/2π",
-                _ => ""
-            };
-
-            if (!string.IsNullOrEmpty(label))
-            {
-                float textWidth = font.MeasureText(label);
-                canvas.DrawText(label, xTick, originY + tickSize + textHeight + 2, SKTextAlign.Center, font, paint);
-            }
+            string label = val.ToString("0.00");
+            float textWidth = font.MeasureText(label);
+            canvas.DrawText(label, px, originY + tickSize + textHeight + 2, SKTextAlign.Center, font, paint);
         }
 
-        // Y-Achse Ticks + Beschriftung (-1 bis 1)
-        float[] labels = { 1f, 0.5f, 0f, -0.5f, -1f };
-        for (int i = 0; i < labels.Length; i++)
+        // Y-Achse Ticks - auch 5 Ticks
+        int yTicksCount = 5;
+        for (int i = 0; i <= yTicksCount; i++)
         {
-            int yTick = originY - i * tickSpacingY;
-            canvas.DrawLine(originX - tickSize, yTick, originX + tickSize, yTick, paint);
+            float val = yMin + i * yRange / yTicksCount;
+            float py = originY - (val - yMin) * pixelsPerYUnit;
+            if (py < margin || py > height - margin) continue;
 
-            string label = labels[i].ToString("0.0");
-            float textWidth = font.MeasureText(label);
-            canvas.DrawText(label, originX - tickSize - 5, yTick + textHeight / 2, SKTextAlign.Right, font, paint);
+            canvas.DrawLine(originX - tickSize, py, originX + tickSize, py, paint);
+
+            string label = val.ToString("0.00");
+            canvas.DrawText(label, originX - tickSize - 5, py + textHeight / 2, SKTextAlign.Right, font, paint);
         }
     }
 
-    private static void DrawSine(SKCanvas canvas, int originX, int originY,
-        float xPixelsPerUnit, float yScale,
+    private static void DrawSine(SKCanvas canvas, float originX, float originY,
+        float pixelsPerXUnit, float pixelsPerYUnit,
+        float xMin, float xMax, float yMin, float yMax,
         float amplitude, float frequency, float phase,
         SKColor color)
     {
@@ -160,11 +160,14 @@ public static class Renderer
         using var path = new SKPath();
         bool started = false;
 
-        for (float x = 0; x <= 2 * MathF.PI; x += 0.01f)
+        // Zeichne sin(x) für x im Bereich [xMin, xMax] in kleinen Schritten
+        for (float x = xMin; x <= xMax; x += 0.01f)
         {
             float y = amplitude * MathF.Sin(frequency * x + phase);
-            float px = originX + x * xPixelsPerUnit;
-            float py = originY - y * yScale;
+
+            // Pixelkoordinaten relativ zum Ursprung:
+            float px = originX + (x - xMin) * pixelsPerXUnit;
+            float py = originY - (y - yMin) * pixelsPerYUnit;
 
             if (!started)
             {

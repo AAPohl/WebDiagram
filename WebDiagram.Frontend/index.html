@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>WebDiagram</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #222;
+      color: #eee;
+      text-align: center;
+      padding: 2em;
+    }
+    canvas, img {
+      border: 2px solid #555;
+      background: black;
+    }
+  </style>
+</head>
+<body>
+  <h1>WebDiagram</h1>
+  <p>Pfeiltasten bewegen die Kamera in X/Z-Richtung. Bild wird vom Server gerendert.</p>
+  <img id="view" width="400" height="300" />
+  <script>
+    const img = document.getElementById("view");
+
+    // Startposition der Kamera
+    const cam = { x: 0, y: 0, z: 5 };
+
+    function updateImage() {
+      const url = `http://localhost:5000/render?x=${cam.x}&y=${cam.y}&z=${cam.z}`;
+      img.src = url;
+    }
+
+    // Initiales Bild
+    updateImage();
+
+    // Tastatureingaben auswerten
+    document.addEventListener("keydown", (e) => {
+      switch (e.key) {
+        case "ArrowUp": cam.z -= 1; break;
+        case "ArrowDown": cam.z += 1; break;
+        case "ArrowLeft": cam.x -= 1; break;
+        case "ArrowRight": cam.x += 1; break;
+        case "w": cam.y += 1; break;
+        case "s": cam.y -= 1; break;
+        default: return; // ignorieren
+      }
+      updateImage();
+    });
+  </script>
+</body>
+</html>

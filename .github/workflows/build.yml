@@ -1,0 +1,16 @@
+name: Build and Test .NET Project
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🧾 Checkout Repository
+      uses: actions/checkout@v4

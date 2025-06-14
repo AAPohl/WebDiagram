@@ -26,8 +26,11 @@ public static class Renderer
         // Die Achse bleibt an (margin, height-margin) für (xMin,yMin)
         // Deshalb müssen wir Sinus-Kurven relativ zu (xMin,yMin) zeichnen
 
-        DrawSine(canvas, originX, originY, pixelsPerXUnit, pixelsPerYUnit, xMin, xMax, yMin, yMax, 1f, 1f, 0f, SKColors.Red);
-        DrawSine(canvas, originX, originY, pixelsPerXUnit, pixelsPerYUnit, xMin, xMax, yMin, yMax, 0.5f, 2f, (float)Math.PI / 4, SKColors.Green);
+        DrawSine(canvas, margin, width, height, pixelsPerXUnit, pixelsPerYUnit, xMin, xMax, yMin, yMax, 1f, 1f, 0f, SKColors.Red);
+
+        DrawSine(canvas, margin, width, height, pixelsPerXUnit, pixelsPerYUnit, xMin, xMax, yMin, yMax, 0.5f, 2f, (float)Math.PI / 4, SKColors.Green);
+
+        DrawCross(canvas, 1f, 0.5f, margin, width, height, xMin, xMax, yMin, yMax, 5, SKColors.Blue);
 
         DrawLabel(canvas, margin, margin / 2, $"View X:[{xMin:0.00},{xMax:0.00}] Y:[{yMin:0.00},{yMax:0.00}]");
 
@@ -143,11 +146,11 @@ public static class Renderer
         }
     }
 
-    private static void DrawSine(SKCanvas canvas, float originX, float originY,
-        float pixelsPerXUnit, float pixelsPerYUnit,
-        float xMin, float xMax, float yMin, float yMax,
-        float amplitude, float frequency, float phase,
-        SKColor color)
+    private static void DrawSine(SKCanvas canvas, float margin, int width, int height,
+    float pixelsPerXUnit, float pixelsPerYUnit,
+    float xMin, float xMax, float yMin, float yMax,
+    float amplitude, float frequency, float phase,
+    SKColor color)
     {
         using var paint = new SKPaint
         {
@@ -160,13 +163,20 @@ public static class Renderer
         using var path = new SKPath();
         bool started = false;
 
-        // Zeichne sin(x) für x im Bereich [xMin, xMax] in kleinen Schritten
-        for (float x = xMin; x <= xMax; x += 0.01f)
+        int pointCount = width - 2 * (int)margin; // Zeichne pro Pixel innerhalb der Box
+
+        float xRange = xMax - xMin;
+        float originY = height - margin + yMin * pixelsPerYUnit; // y-Nullpunkt
+
+        for (int i = 0; i <= pointCount; i++)
         {
+            // x linear interpolieren über den Bereich [xMin, xMax]
+            float x = xMin + (xRange * i) / pointCount;
+
             float y = amplitude * MathF.Sin(frequency * x + phase);
 
-            // Pixelkoordinaten relativ zum Ursprung:
-            float px = originX + (x - xMin) * pixelsPerXUnit;
+            // Pixelkoordinaten relativ zum linken Margin
+            float px = margin + (x - xMin) * pixelsPerXUnit;
             float py = originY - (y - yMin) * pixelsPerYUnit;
 
             if (!started)
@@ -182,6 +192,7 @@ public static class Renderer
 
         canvas.DrawPath(path, paint);
     }
+
 
     private static void DrawLabel(SKCanvas canvas, int x, int y, string text)
     {
@@ -200,4 +211,29 @@ public static class Renderer
 
         canvas.DrawText(text, x, y, SKTextAlign.Left, font, paint);
     }
+    
+    private static void DrawCross(SKCanvas canvas, float x, float y,
+    float margin, int width, int height,
+    float xMin, float xMax, float yMin, float yMax,
+    float size, SKColor color)
+{
+    float pixelsPerXUnit = (width - 2 * margin) / (xMax - xMin);
+    float pixelsPerYUnit = (height - 2 * margin) / (yMax - yMin);
+
+    float px = margin + (x - xMin) * pixelsPerXUnit;
+    float originY = height - margin + yMin * pixelsPerYUnit;
+    float py = originY - (y - yMin) * pixelsPerYUnit;
+
+    using var paint = new SKPaint
+    {
+        Color = color,
+        StrokeWidth = 2,
+        IsAntialias = true
+    };
+
+    canvas.DrawLine(px - size, py - size, px + size, py + size, paint);
+    canvas.DrawLine(px - size, py + size, px + size, py - size, paint);
+}
+
+
 }

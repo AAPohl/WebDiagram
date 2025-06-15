@@ -1,5 +1,4 @@
 using SkiaSharp;
-using System;
 
 public static class DataRendering
 {
@@ -36,7 +35,7 @@ public static class DataRendering
 
         int pointCount = renderInfo.Width - renderInfo.Margin.Left - renderInfo.Margin.Right;
 
-        float xRange = renderInfo.ViewPort.XMax - renderInfo.ViewPort.XMin;
+        float xRange = renderInfo.ViewPort.RangeX();
         float originY = renderInfo.ToGlobalY(0);
 
         for (int i = 0; i <= pointCount; i++)

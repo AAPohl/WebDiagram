@@ -21,10 +21,17 @@
 <body>
   <h1>WebDiagram</h1>
   <p>Pfeiltasten bewegen den ViewPort. Bild wird vom Server gerendert.</p>
-  <web-diagram-frontend></web-diagram-frontend>
-  <img id="view" width="600" height="400" />
+  <web-diagram-frontend width="600" height="400"></web-diagram-frontend>
+  
   <script>
-    const img = document.getElementById("view");
+    window.addEventListener("DOMContentLoaded", init);
+
+    function init() {
+      const img = document.getElementById("view");
+      if (!img) {
+        console.error("Bild nicht gefunden!");
+        return;
+      }
 
     // Startposition des Viewport
     const viewPort = { xMin: 0, yMin: 0, xMax: 4, yMax: 4 };
@@ -183,6 +190,7 @@
         e.preventDefault(); // Seiten-Scroll verhindern
     }
 });
+    }
   </script>
 </body>
 </html>

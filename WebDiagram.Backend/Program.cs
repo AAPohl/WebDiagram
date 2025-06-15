@@ -1,24 +1,23 @@
 using Microsoft.AspNetCore.Mvc;
-using SkiaSharp;
 
+var render = new Renderer();
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCors();
 var app = builder.Build();
-
 app.UseCors(p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
 app.MapGet("/render", ([FromQuery] float xMin, [FromQuery] float xMax, [FromQuery] float yMin, [FromQuery] float yMax, [FromQuery] int width, [FromQuery] int height) =>
 {
-    var imgBytes = Renderer.RenderCameraView(xMin, xMax, yMin, yMax, width, height);
+    var imgBytes = render.Render(xMin, xMax, yMin, yMax, width, height);
     return Results.File(imgBytes, "image/png");
 });
 app.MapGet("/config", () =>
 {
     var margin = new {
-        top = 40,
-        bottom = 40,
-        left = 40,
-        right = 40
+        top = render.Margin.Top,
+        bottom = render.Margin.Bottom,
+        left = render.Margin.Left,
+        right = render.Margin.Right
     };
 
     return Results.Json(new { margin });

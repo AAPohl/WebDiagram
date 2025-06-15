@@ -32,6 +32,7 @@
 
     // Startposition des Viewport
     const viewPort = { xMin: 0, yMin: 0, xMax: 4, yMax: 4 };
+    component.setViewPort(viewPort);
     let margin = { top: 0, bottom: 0, left: 0, right: 0 };
 
     fetch("http://localhost:5000/config")
@@ -40,8 +41,6 @@
             margin = cfg.margin;
       });
 
-    // Initiales Bild
-    component.updateImage(viewPort);
 
     // Tastatureingaben auswerten
     const stepX = 0.02;

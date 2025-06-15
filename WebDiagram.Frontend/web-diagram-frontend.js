@@ -12,10 +12,14 @@ class WebDiagramFrontend extends HTMLElement {
         this.source = this.getAttribute("source")
     }
 
+    setViewPort(viewPort) {
+        this.viewPort = viewPort;
+        this.updateImage(viewPort);        
+    }
     updateImage(viewPort) {
         const url = `${this.source}/render?xMin=${viewPort.xMin}&xMax=${viewPort.xMax}&yMin=${viewPort.yMin}&yMax=${viewPort.yMax}`;
         this.img.src = url;
-      }
+    }
   }
   
   customElements.define('web-diagram-frontend', WebDiagramFrontend);

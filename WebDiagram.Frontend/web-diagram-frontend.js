@@ -17,14 +17,17 @@ class WebDiagramFrontend extends HTMLElement {
                 this.margin = cfg.margin;
         });
 
-        this.viewPort = { xMin: 0, yMin: 0, xMax: 4, yMax: 4 };
+        this.viewPort = { xMin: 0, yMin: 0, xMax: 1, yMax: 1 };
         this.isDragging = false;
         this.lastMousePos = { x: 0, y: 0 };
 
-        // Events für Maus-Drag setzen
+        this.stepX = 0.02;
+        this.stepY = 0.02;
+
         img.addEventListener("mousedown", this.startDrag.bind(this));
         window.addEventListener("mouseup", this.stopDrag.bind(this));
         window.addEventListener("mousemove", this.dragMove.bind(this));
+        window.addEventListener("keydown", this.handleKeyDown.bind(this));
     }
 
     setInitialViewPort(viewPort) {
@@ -70,6 +73,34 @@ class WebDiagramFrontend extends HTMLElement {
     
         this.updateImage(this.viewPort);
     }
+
+    handleKeyDown(e) {
+        if (!this.viewPort) return;
+    
+        switch (e.key) {
+          case 'ArrowLeft':
+            this.viewPort.xMin += this.stepX;
+            this.viewPort.xMax += this.stepX;
+            break;
+          case 'ArrowRight':
+            this.viewPort.xMin -= this.stepX;
+            this.viewPort.xMax -= this.stepX;
+            break;
+          case 'ArrowUp':
+            this.viewPort.yMin -= this.stepY;
+            this.viewPort.yMax -= this.stepY;
+            break;
+          case 'ArrowDown':
+            this.viewPort.yMin += this.stepY;
+            this.viewPort.yMax += this.stepY;
+            break;
+          default:
+            return;
+        }
+    
+        this.updateImage(this.viewPort);
+    }
+    
 }
   
 customElements.define('web-diagram-frontend', WebDiagramFrontend);

@@ -41,34 +41,6 @@
             margin = cfg.margin;
       });
 
-
-    // Tastatureingaben auswerten
-    const stepX = 0.02;
-    const stepY = 0.02;
-    document.addEventListener("keydown", (e) => {
-    switch (e.key) {
-        case 'ArrowLeft':
-        viewPort.xMin += stepX;
-        viewPort.xMax += stepX;
-        break;
-        case 'ArrowRight':
-        viewPort.xMin -= stepX;
-        viewPort.xMax -= stepX;
-        break;
-        case 'ArrowUp':
-        viewPort.yMin -= stepY;
-        viewPort.yMax -= stepY;
-        break;
-        case 'ArrowDown':
-        viewPort.yMin += stepY;
-        viewPort.yMax += stepY;
-        break;
-        default:
-        return;
-    }
-    component.updateImage(viewPort);
-    });
-
     const zoomFactor = 1.1;
     img.addEventListener('wheel', function (e) {
         const rect = img.getBoundingClientRect();

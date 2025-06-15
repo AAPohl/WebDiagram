@@ -3,17 +3,13 @@ using System;
 
 public static class Renderer
 {
-    public static byte[] RenderCameraView(float xMin, float xMax, float yMin, float yMax)
+    public static byte[] RenderCameraView(float xMin, float xMax, float yMin, float yMax, int width, int height)
     {
-        
-        int width = 600;
-        int height = 400;
-        int margin = 40;
-        var margin1 = new Margin(margin, margin, margin, margin);
-        var viewPort1 = new ViewPort(xMin, xMax, yMin, yMax);
-        float pixelsPerXUnit = (width - 2 * margin) / (xMax - xMin);
-        float pixelsPerYUnit = (height - 2 * margin) / (yMax - yMin);
-        var renderInfo = new RenderInfo(margin1, width, height, pixelsPerXUnit, pixelsPerYUnit, viewPort1);
+        var margin = new Margin(40, 40, 40, 40);
+        var viewPort = new ViewPort(xMin, xMax, yMin, yMax);
+        float pixelsPerXUnit = (width - margin.Left - margin.Right) / viewPort.RangeX();
+        float pixelsPerYUnit = (height - margin.Top - margin.Bottom) / viewPort.RangeY();
+        var renderInfo = new RenderInfo(margin, width, height, pixelsPerXUnit, pixelsPerYUnit, viewPort);
 
         using var bitmap = new SKBitmap(width, height);
         using var canvas = new SKCanvas(bitmap);
@@ -26,7 +22,7 @@ public static class Renderer
         DataRendering.DrawSine(canvas, renderInfo, 0.5f, 2f, (float)Math.PI / 4, SKColors.Green);
         DataRendering.DrawCross(canvas, renderInfo, 1f, 0.5f, 5, SKColors.Blue);
 
-        DrawLabel(canvas, margin, margin / 2, $"View X:[{xMin:0.00},{xMax:0.00}] Y:[{yMin:0.00},{yMax:0.00}]");
+        DrawLabel(canvas, 20, 20, $"View X:[{xMin:0.00},{xMax:0.00}] Y:[{yMin:0.00},{yMax:0.00}]");
 
         using var image = SKImage.FromBitmap(bitmap);
         using var data = image.Encode(SKEncodedImageFormat.Png, 100);
@@ -55,9 +51,4 @@ public static class Renderer
 
         canvas.DrawText(text, x, y, SKTextAlign.Left, font, paint);
     }
-    
-    
-
-
-
 }

@@ -36,7 +36,7 @@ class WebDiagramFrontend extends HTMLElement {
         this.updateImage(viewPort);        
     }
     updateImage(viewPort) {
-        const url = `${this.source}/render?xMin=${viewPort.xMin}&xMax=${viewPort.xMax}&yMin=${viewPort.yMin}&yMax=${viewPort.yMax}`;
+        const url = `${this.source}/render?xMin=${viewPort.xMin}&xMax=${viewPort.xMax}&yMin=${viewPort.yMin}&yMax=${viewPort.yMax}&width=${this.img.width}&height=${this.img.height}`;
         this.img.src = url;
     }
 

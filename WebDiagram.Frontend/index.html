@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>WebDiagram</title>
+  <script src="web-diagram-frontend.js" defer></script>
   <style>
     body {
       font-family: sans-serif;
@@ -20,6 +21,7 @@
 <body>
   <h1>WebDiagram</h1>
   <p>Pfeiltasten bewegen den ViewPort. Bild wird vom Server gerendert.</p>
+  <web-diagram-frontend></web-diagram-frontend>
   <img id="view" width="600" height="400" />
   <script>
     const img = document.getElementById("view");

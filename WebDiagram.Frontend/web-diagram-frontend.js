@@ -1,6 +1,5 @@
 class WebDiagramFrontend extends HTMLElement {
     connectedCallback() {
-        // Template erzeugen
         const img = document.createElement('img');
         img.id = "view";
         img.width = this.getAttribute("width") || 100;
@@ -9,8 +8,14 @@ class WebDiagramFrontend extends HTMLElement {
         img.style.background = "black";
 
         this.appendChild(img);
-        alert("Hello from WebDiagramFrontend!");
+        this.img = img;
+        this.source = this.getAttribute("source")
     }
+
+    updateImage(viewPort) {
+        const url = `${this.source}/render?xMin=${viewPort.xMin}&xMax=${viewPort.xMax}&yMin=${viewPort.yMin}&yMax=${viewPort.yMax}`;
+        this.img.src = url;
+      }
   }
   
   customElements.define('web-diagram-frontend', WebDiagramFrontend);

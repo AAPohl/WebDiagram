@@ -14,7 +14,7 @@ class WebDiagramFrontend extends HTMLElement {
             .then(res => res.json())
             .then(cfg => {
                 this.margin = cfg.margin;
-        });
+            });
 
         this.viewPort = { xMin: 0, yMin: 0, xMax: 1, yMax: 1 };
         this.isDragging = false;
@@ -23,6 +23,8 @@ class WebDiagramFrontend extends HTMLElement {
         this.stepX = 0.02;
         this.stepY = 0.02;
         this.zoomFactor = 1.1;
+
+        this.throttledUpdateImage = this.throttle(this.updateImage.bind(this), 30);
 
         this.img.addEventListener("mousedown", this.startDrag.bind(this));
         window.addEventListener("mouseup", this.stopDrag.bind(this));
@@ -33,11 +35,23 @@ class WebDiagramFrontend extends HTMLElement {
 
     setInitialViewPort(viewPort) {
         this.viewPort = viewPort;
-        this.updateImage(viewPort);        
+        this.updateImage(viewPort);  // Initial synchron
     }
+
     updateImage(viewPort) {
         const url = `${this.source}/render?xMin=${viewPort.xMin}&xMax=${viewPort.xMax}&yMin=${viewPort.yMin}&yMax=${viewPort.yMax}&width=${this.img.width}&height=${this.img.height}`;
         this.img.src = url;
+    }
+
+    throttle(func, delay) {
+        let lastCall = 0;
+        return (...args) => {
+            const now = Date.now();
+            if (now - lastCall >= delay) {
+            lastCall = now;
+            func.apply(this, args);
+            }
+        };
     }
 
     startDrag(e) {
@@ -72,34 +86,34 @@ class WebDiagramFrontend extends HTMLElement {
         this.viewPort.yMin += dy * scaleY;
         this.viewPort.yMax += dy * scaleY;
     
-        this.updateImage(this.viewPort);
+        this.throttledUpdateImage(this.viewPort);
     }
 
     handleKeyDown(e) {
         if (!this.viewPort) return;
     
         switch (e.key) {
-          case 'ArrowLeft':
-            this.viewPort.xMin += this.stepX;
-            this.viewPort.xMax += this.stepX;
-            break;
-          case 'ArrowRight':
-            this.viewPort.xMin -= this.stepX;
-            this.viewPort.xMax -= this.stepX;
-            break;
-          case 'ArrowUp':
-            this.viewPort.yMin -= this.stepY;
-            this.viewPort.yMax -= this.stepY;
-            break;
-          case 'ArrowDown':
-            this.viewPort.yMin += this.stepY;
-            this.viewPort.yMax += this.stepY;
-            break;
-          default:
-            return;
+            case 'ArrowLeft':
+                this.viewPort.xMin += this.stepX;
+                this.viewPort.xMax += this.stepX;
+                break;
+            case 'ArrowRight':
+                this.viewPort.xMin -= this.stepX;
+                this.viewPort.xMax -= this.stepX;
+                break;
+            case 'ArrowUp':
+                this.viewPort.yMin -= this.stepY;
+                this.viewPort.yMax -= this.stepY;
+                break;
+            case 'ArrowDown':
+                this.viewPort.yMin += this.stepY;
+                this.viewPort.yMax += this.stepY;
+                break;
+            default:
+                return;
         }
     
-        this.updateImage(this.viewPort);
+        this.updateImage(this.viewPort);  // synchron, da seltener
     }
 
     handleWheel(e) {
@@ -109,52 +123,48 @@ class WebDiagramFrontend extends HTMLElement {
         const width = this.viewPort.xMax - this.viewPort.xMin;
         const height = this.viewPort.yMax - this.viewPort.yMin;
     
-        // Zoom-Maßstab
         const scale = (e.deltaY < 0) ? (1 / this.zoomFactor) : this.zoomFactor;
     
-        // Zoom unten (untere Margin)
         if (mouseY >= rect.height - this.margin.bottom) {
-          const worldX = this.viewPort.xMin + ((mouseX - this.margin.left) / (rect.width - this.margin.left - this.margin.right)) * width;
-          const newWidth = width * scale;
-          const newXMin = worldX - ((mouseX - this.margin.left) / (rect.width - this.margin.left - this.margin.right)) * newWidth;
-          this.viewPort.xMin = newXMin;
-          this.viewPort.xMax = newXMin + newWidth;
-          this.updateImage(this.viewPort);
-          e.preventDefault();
-          return;
+            const worldX = this.viewPort.xMin + ((mouseX - this.margin.left) / (rect.width - this.margin.left - this.margin.right)) * width;
+            const newWidth = width * scale;
+            const newXMin = worldX - ((mouseX - this.margin.left) / (rect.width - this.margin.left - this.margin.right)) * newWidth;
+            this.viewPort.xMin = newXMin;
+            this.viewPort.xMax = newXMin + newWidth;
+            this.throttledUpdateImage(this.viewPort);
+            e.preventDefault();
+            return;
         }
     
-        // Zoom links (linke Margin)
         if (mouseX <= this.margin.left) {
-          const worldY = this.viewPort.yMax - ((mouseY - this.margin.top) / (rect.height - this.margin.top - this.margin.bottom)) * height;
-          const newHeight = height * scale;
-          const newYMax = worldY + ((mouseY - this.margin.top) / (rect.height - this.margin.top - this.margin.bottom)) * newHeight;
-          this.viewPort.yMin = newYMax - newHeight;
-          this.viewPort.yMax = newYMax;
-          this.updateImage(this.viewPort);
-          e.preventDefault();
-          return;
+            const worldY = this.viewPort.yMax - ((mouseY - this.margin.top) / (rect.height - this.margin.top - this.margin.bottom)) * height;
+            const newHeight = height * scale;
+            const newYMax = worldY + ((mouseY - this.margin.top) / (rect.height - this.margin.top - this.margin.bottom)) * newHeight;
+            this.viewPort.yMin = newYMax - newHeight;
+            this.viewPort.yMax = newYMax;
+            this.throttledUpdateImage(this.viewPort);
+            e.preventDefault();
+            return;
         }
     
-        // Zoom innen (mittlerer Bereich)
         const insideHorizontal = mouseX > this.margin.left && mouseX < (rect.width - this.margin.right);
         const insideVertical = mouseY > this.margin.top && mouseY < (rect.height - this.margin.bottom);
     
         if (insideHorizontal && insideVertical) {
-          const worldX = this.viewPort.xMin + ((mouseX - this.margin.left) / (rect.width - this.margin.left - this.margin.right)) * width;
-          const worldY = this.viewPort.yMax - ((mouseY - this.margin.top) / (rect.height - this.margin.top - this.margin.bottom)) * height;
-          const newWidth = width * scale;
-          const newHeight = height * scale;
-          const newXMin = worldX - ((mouseX - this.margin.left) / (rect.width - this.margin.left - this.margin.right)) * newWidth;
-          const newYMax = worldY + ((mouseY - this.margin.top) / (rect.height - this.margin.top - this.margin.bottom)) * newHeight;
-          this.viewPort.xMin = newXMin;
-          this.viewPort.xMax = newXMin + newWidth;
-          this.viewPort.yMin = newYMax - newHeight;
-          this.viewPort.yMax = newYMax;
-          this.updateImage(this.viewPort);
-          e.preventDefault();
+            const worldX = this.viewPort.xMin + ((mouseX - this.margin.left) / (rect.width - this.margin.left - this.margin.right)) * width;
+            const worldY = this.viewPort.yMax - ((mouseY - this.margin.top) / (rect.height - this.margin.top - this.margin.bottom)) * height;
+            const newWidth = width * scale;
+            const newHeight = height * scale;
+            const newXMin = worldX - ((mouseX - this.margin.left) / (rect.width - this.margin.left - this.margin.right)) * newWidth;
+            const newYMax = worldY + ((mouseY - this.margin.top) / (rect.height - this.margin.top - this.margin.bottom)) * newHeight;
+            this.viewPort.xMin = newXMin;
+            this.viewPort.xMax = newXMin + newWidth;
+            this.viewPort.yMin = newYMax - newHeight;
+            this.viewPort.yMax = newYMax;
+            this.throttledUpdateImage(this.viewPort);
+            e.preventDefault();
         }
     }    
 }
-  
+
 customElements.define('web-diagram-frontend', WebDiagramFrontend);

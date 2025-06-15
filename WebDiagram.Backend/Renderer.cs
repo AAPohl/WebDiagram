@@ -14,7 +14,7 @@ public static class Renderer
         using var bitmap = new SKBitmap(width, height);
         using var canvas = new SKCanvas(bitmap);
 
-        ClearBackground(canvas);
+        canvas.Clear(SKColors.White);
         AxisRendering.DrawAxes(canvas, renderInfo);
         AxisRendering.DrawTicksAndLabels(canvas, renderInfo);
 
@@ -27,11 +27,6 @@ public static class Renderer
         using var image = SKImage.FromBitmap(bitmap);
         using var data = image.Encode(SKEncodedImageFormat.Png, 100);
         return data.ToArray();
-    }
-
-    private static void ClearBackground(SKCanvas canvas)
-    {
-        canvas.Clear(SKColors.White);
     }
 
     private static void DrawLabel(SKCanvas canvas, int x, int y, string text)

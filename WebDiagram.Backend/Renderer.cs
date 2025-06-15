@@ -5,9 +5,15 @@ public static class Renderer
 {
     public static byte[] RenderCameraView(float xMin, float xMax, float yMin, float yMax)
     {
+        
         int width = 600;
         int height = 400;
         int margin = 40;
+        var margin1 = new Margin(margin, margin, margin, margin);
+        var viewPort1 = new ViewPort(xMin, xMax, yMin, yMax);
+        float pixelsPerXUnit = (width - 2 * margin) / (xMax - xMin);
+        float pixelsPerYUnit = (height - 2 * margin) / (yMax - yMin);
+        var renderInfo = new RenderInfo(margin1, width, height, pixelsPerXUnit, pixelsPerYUnit, viewPort1);
 
         using var bitmap = new SKBitmap(width, height);
         using var canvas = new SKCanvas(bitmap);
@@ -16,8 +22,7 @@ public static class Renderer
         DrawAxes(canvas, width, height, margin);
         DrawTicksAndLabels(canvas, width, height, margin, xMin, xMax, yMin, yMax);
 
-        float pixelsPerXUnit = (width - 2 * margin) / (xMax - xMin);
-        float pixelsPerYUnit = (height - 2 * margin) / (yMax - yMin);
+        
 
         // Ursprung in Pixelkoordinaten
         float originX = margin - xMin * pixelsPerXUnit;          // x=0 pixel-Position relativ zum margin
@@ -30,7 +35,7 @@ public static class Renderer
 
         DrawSine(canvas, margin, width, height, pixelsPerXUnit, pixelsPerYUnit, xMin, xMax, yMin, yMax, 0.5f, 2f, (float)Math.PI / 4, SKColors.Green);
 
-        DrawCross(canvas, 1f, 0.5f, margin, width, height, pixelsPerXUnit, pixelsPerYUnit, xMin, xMax, yMin, yMax, 5, SKColors.Blue);
+        DataRendering.DrawCross(canvas, renderInfo, 1f, 0.5f, 5, SKColors.Blue);
 
         DrawLabel(canvas, margin, margin / 2, $"View X:[{xMin:0.00},{xMax:0.00}] Y:[{yMin:0.00},{yMax:0.00}]");
 
@@ -213,26 +218,7 @@ public static class Renderer
         canvas.DrawText(text, x, y, SKTextAlign.Left, font, paint);
     }
     
-    private static void DrawCross(SKCanvas canvas, float x, float y,
-    float margin, int width, int height,
-    float pixelsPerXUnit, float pixelsPerYUnit,
-    float xMin, float xMax, float yMin, float yMax,
-    float size, SKColor color)
-{
-    // Weltkoordinaten → Pixelkoordinaten
-    float px = margin + (x - xMin) * pixelsPerXUnit;
-    float py = height - margin - (y - yMin) * pixelsPerYUnit;
-
-    using var paint = new SKPaint
-    {
-        Color = color,
-        StrokeWidth = 2,
-        IsAntialias = true
-    };
-
-    canvas.DrawLine(px - size, py - size, px + size, py + size, paint);
-    canvas.DrawLine(px - size, py + size, px + size, py - size, paint);
-}
+    
 
 
 

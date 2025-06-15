@@ -1,3 +1,5 @@
+using WebDiagram.Backend;
+
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     ContentRootPath = AppContext.BaseDirectory,
@@ -13,5 +15,8 @@ app.MapGet("/", context =>
     context.Response.Redirect("/index.html");
     return Task.CompletedTask;
 });
+
+var renderer = new Renderer();
+app.MapWebDiagramApi(renderer);
 
 app.Run();

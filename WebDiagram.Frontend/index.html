@@ -32,7 +32,7 @@
 
     // Startposition des Viewport
     const viewPort = { xMin: 0, yMin: 0, xMax: 4, yMax: 4 };
-    component.setViewPort(viewPort);
+    component.setInitialViewPort(viewPort);
     let margin = { top: 0, bottom: 0, left: 0, right: 0 };
 
     fetch("http://localhost:5000/config")
@@ -66,46 +66,6 @@
         default:
         return;
     }
-    component.updateImage(viewPort);
-    });
-
-    // Maus-Drag-Steuerung
-    let isDragging = false;
-    let lastMousePos = { x: 0, y: 0 };
-
-    img.addEventListener("mousedown", (e) => {
-        isDragging = true;
-        lastMousePos = { x: e.clientX, y: e.clientY };
-        e.preventDefault();
-    });
-
-    window.addEventListener("mouseup", () => {
-    isDragging = false;
-    });
-
-    window.addEventListener("mousemove", (e) => {
-    if (!isDragging) return;
-
-    const dx = e.clientX - lastMousePos.x;
-    const dy = e.clientY - lastMousePos.y;
-
-    lastMousePos = { x: e.clientX, y: e.clientY };
-
-    const widthPx = img.naturalWidth - margin.left - margin.right;
-    const heightPx = img.naturalHeight - margin.top - margin.bottom;
-
-    const xRange = viewPort.xMax - viewPort.xMin;
-    const yRange = viewPort.yMax - viewPort.yMin;
-
-    const scaleX = xRange / widthPx;
-    const scaleY = yRange / heightPx;
-
-    viewPort.xMin -= dx * scaleX;
-    viewPort.xMax -= dx * scaleX;
-
-    viewPort.yMin += dy * scaleY;
-    viewPort.yMax += dy * scaleY;
-
     component.updateImage(viewPort);
     });
 

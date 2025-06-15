@@ -10,9 +10,24 @@ class WebDiagramFrontend extends HTMLElement {
         this.appendChild(img);
         this.img = img;
         this.source = this.getAttribute("source")
+
+        fetch(`${this.source}/config`)
+            .then(res => res.json())
+            .then(cfg => {
+                this.margin = cfg.margin;
+        });
+
+        this.viewPort = { xMin: 0, yMin: 0, xMax: 4, yMax: 4 };
+        this.isDragging = false;
+        this.lastMousePos = { x: 0, y: 0 };
+
+        // Events für Maus-Drag setzen
+        img.addEventListener("mousedown", this.startDrag.bind(this));
+        window.addEventListener("mouseup", this.stopDrag.bind(this));
+        window.addEventListener("mousemove", this.dragMove.bind(this));
     }
 
-    setViewPort(viewPort) {
+    setInitialViewPort(viewPort) {
         this.viewPort = viewPort;
         this.updateImage(viewPort);        
     }
@@ -20,6 +35,41 @@ class WebDiagramFrontend extends HTMLElement {
         const url = `${this.source}/render?xMin=${viewPort.xMin}&xMax=${viewPort.xMax}&yMin=${viewPort.yMin}&yMax=${viewPort.yMax}`;
         this.img.src = url;
     }
-  }
+
+    startDrag(e) {
+        this.isDragging = true;
+        this.lastMousePos = { x: e.clientX, y: e.clientY };
+        e.preventDefault();
+    }
+    
+    stopDrag() {
+        this.isDragging = false;
+    }
+    
+    dragMove(e) {
+        if (!this.isDragging) return;
+    
+        const dx = e.clientX - this.lastMousePos.x;
+        const dy = e.clientY - this.lastMousePos.y;
+        this.lastMousePos = { x: e.clientX, y: e.clientY };
+    
+        const widthPx = this.img.naturalWidth - this.margin.left - this.margin.right;
+        const heightPx = this.img.naturalHeight - this.margin.top - this.margin.bottom;
+    
+        const xRange = this.viewPort.xMax - this.viewPort.xMin;
+        const yRange = this.viewPort.yMax - this.viewPort.yMin;
+    
+        const scaleX = xRange / widthPx;
+        const scaleY = yRange / heightPx;
+    
+        this.viewPort.xMin -= dx * scaleX;
+        this.viewPort.xMax -= dx * scaleX;
+    
+        this.viewPort.yMin += dy * scaleY;
+        this.viewPort.yMax += dy * scaleY;
+    
+        this.updateImage(this.viewPort);
+    }
+}
   
-  customElements.define('web-diagram-frontend', WebDiagramFrontend);
+customElements.define('web-diagram-frontend', WebDiagramFrontend);

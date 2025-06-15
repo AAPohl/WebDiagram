@@ -31,9 +31,9 @@ public static class Renderer
         // Die Achse bleibt an (margin, height-margin) für (xMin,yMin)
         // Deshalb müssen wir Sinus-Kurven relativ zu (xMin,yMin) zeichnen
 
-        DrawSine(canvas, margin, width, height, pixelsPerXUnit, pixelsPerYUnit, xMin, xMax, yMin, yMax, 1f, 1f, 0f, SKColors.Red);
+        DataRendering.DrawSine(canvas, renderInfo, 1f, 1f, 0f, SKColors.Red);
 
-        DrawSine(canvas, margin, width, height, pixelsPerXUnit, pixelsPerYUnit, xMin, xMax, yMin, yMax, 0.5f, 2f, (float)Math.PI / 4, SKColors.Green);
+        DataRendering.DrawSine(canvas, renderInfo, 0.5f, 2f, (float)Math.PI / 4, SKColors.Green);
 
         DataRendering.DrawCross(canvas, renderInfo, 1f, 0.5f, 5, SKColors.Blue);
 
@@ -150,55 +150,6 @@ public static class Renderer
             canvas.DrawText(label, originX - tickSize - 5, py + textHeight / 2, SKTextAlign.Right, font, paint);
         }
     }
-
-    private static void DrawSine(SKCanvas canvas, float margin, int width, int height,
-    float pixelsPerXUnit, float pixelsPerYUnit,
-    float xMin, float xMax, float yMin, float yMax,
-    float amplitude, float frequency, float phase,
-    SKColor color)
-{
-    using var paint = new SKPaint
-    {
-        Color = color,
-        StrokeWidth = 2,
-        IsAntialias = true,
-        Style = SKPaintStyle.Stroke
-    };
-
-    using var path = new SKPath();
-    bool started = false;
-
-    int pointCount = width - 2 * (int)margin; // Zeichne pro Pixel innerhalb der Box
-
-    float xRange = xMax - xMin;
-    float originY = height - margin + yMin * pixelsPerYUnit; // y=0 in Pixeln
-
-    for (int i = 0; i <= pointCount; i++)
-    {
-        // x linear interpolieren über den Bereich [xMin, xMax]
-        float x = xMin + (xRange * i) / pointCount;
-
-        // Y-Wert der Funktion relativ zum aktuellen Viewport
-        float y = yMin + amplitude * MathF.Sin(frequency * x + phase);
-
-        // Pixelkoordinaten berechnen
-        float px = margin + (x - xMin) * pixelsPerXUnit;
-        float py = originY - (y - yMin) * pixelsPerYUnit;
-
-        if (!started)
-        {
-            path.MoveTo(px, py);
-            started = true;
-        }
-        else
-        {
-            path.LineTo(px, py);
-        }
-    }
-
-    canvas.DrawPath(path, paint);
-}
-
 
     private static void DrawLabel(SKCanvas canvas, int x, int y, string text)
     {

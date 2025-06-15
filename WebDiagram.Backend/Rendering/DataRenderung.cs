@@ -6,8 +6,8 @@ public static class DataRendering
     public static void DrawCross(SKCanvas canvas, RenderInfo renderInfo,
         float x, float y, float size, SKColor color)
     {
-        float px = renderInfo.Margin.Left + (x - renderInfo.ViewPort.XMin) * renderInfo.PixelsPerXUnit;
-        float py = renderInfo.Height - renderInfo.Margin.Top - (y - renderInfo.ViewPort.YMin) * renderInfo.PixelsPerYUnit;
+        float px = renderInfo.ToGlobalX(x);
+        float py = renderInfo.ToGlobalY(y);
 
         using var paint = new SKPaint
         {
@@ -37,7 +37,7 @@ public static class DataRendering
         int pointCount = renderInfo.Width - renderInfo.Margin.Left - renderInfo.Margin.Right;
 
         float xRange = renderInfo.ViewPort.XMax - renderInfo.ViewPort.XMin;
-        float originY = renderInfo.Height - renderInfo.Margin.Top + renderInfo.ViewPort.YMin * renderInfo.PixelsPerYUnit; // y=0 in Pixeln
+        float originY = renderInfo.ToGlobalY(0);
 
         for (int i = 0; i <= pointCount; i++)
         {
@@ -45,11 +45,11 @@ public static class DataRendering
             float x = renderInfo.ViewPort.XMin + xRange * i / pointCount;
 
             // Y-Wert der Funktion relativ zum aktuellen Viewport
-            float y = renderInfo.ViewPort.YMin + amplitude * MathF.Sin(frequency * x + phase);
+            float y = amplitude * MathF.Sin(frequency * x + phase);
 
             // Pixelkoordinaten berechnen
-            float px = renderInfo.Margin.Left + (x - renderInfo.ViewPort.XMin) * renderInfo.PixelsPerXUnit;
-            float py = originY - (y - renderInfo.ViewPort.YMin) * renderInfo.PixelsPerYUnit;
+            float px = renderInfo.ToGlobalX(x);
+            float py = renderInfo.ToGlobalY(y);
 
             if (!started)
             {

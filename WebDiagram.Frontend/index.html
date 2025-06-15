@@ -21,98 +21,21 @@
 <body>
   <h1>WebDiagram</h1>
   <p>Pfeiltasten bewegen den ViewPort. Bild wird vom Server gerendert.</p>
-  <web-diagram-frontend width="600" height="400" source="http://localhost:5000"></web-diagram-frontend>
+  <web-diagram-frontend id="diagram1" width="600" height="400" source="http://localhost:5000"></web-diagram-frontend>
+  <web-diagram-frontend id="diagram2" width="300" height="300" source="http://localhost:5000"></web-diagram-frontend>
   
   <script>
     window.addEventListener("DOMContentLoaded", init);
 
     function init() {
-      const component = document.querySelector("web-diagram-frontend");
-      const img = document.getElementById("view");
-
-    // Startposition des Viewport
-    const viewPort = { xMin: 0, yMin: 0, xMax: 4, yMax: 4 };
-    component.setInitialViewPort(viewPort);
-    let margin = { top: 0, bottom: 0, left: 0, right: 0 };
-
-    fetch("http://localhost:5000/config")
-        .then(res => res.json())
-        .then(cfg => {
-            margin = cfg.margin;
-      });
-
-    const zoomFactor = 1.1;
-    img.addEventListener('wheel', function (e) {
-        const rect = img.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        const imageHeight = rect.height;
-
-        // Prüfen, ob Maus in unterer Margin ist
-        if (mouseY >= imageHeight - margin.bottom) {
-            const width = viewPort.xMax - viewPort.xMin;
-            const worldX = viewPort.xMin + ((mouseX - margin.left) / (rect.width - margin.left - margin.right)) * width;
-            const scale = (e.deltaY < 0) ? (1 / zoomFactor) : zoomFactor;
-            const newWidth = width * scale;
-            const newXMin = worldX - ((mouseX - margin.left) / (rect.width - margin.left - margin.right)) * newWidth;
-            viewPort.xMin = newXMin;
-            viewPort.xMax = newXMin + newWidth;
-
-            component.updateImage(viewPort);
-
-            e.preventDefault(); // Seiten-Scroll verhindern
-        }
-    });
-    img.addEventListener('wheel', function (e) {
-        const rect = img.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        const imageWidth = rect.width;
-
-        // Prüfen, ob Maus im linken Margin-Bereich ist
-        if (mouseX <= margin.left) {
-            const height = viewPort.yMax - viewPort.yMin;
-            const worldY = viewPort.yMax - ((mouseY - margin.top) / (rect.height - margin.top - margin.bottom)) * height;
-            const scale = (e.deltaY < 0) ? (1 / zoomFactor) : zoomFactor;
-            const newHeight = height * scale;
-            const newYMax = worldY + ((mouseY - margin.top) / (rect.height - margin.top - margin.bottom)) * newHeight;
-            viewPort.yMin = newYMax - newHeight;
-            viewPort.yMax = newYMax;
-
-            component.updateImage(viewPort);
-
-            e.preventDefault(); // Seiten-Scroll verhindern
-        }
-    });
-
-    img.addEventListener('wheel', function (e) {
-    const rect = img.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const insideHorizontal = mouseX > margin.left && mouseX < (rect.width - margin.right);
-    const insideVertical = mouseY > margin.top && mouseY < (rect.height - margin.bottom);
-
-    if (insideHorizontal && insideVertical) {
-        const width = viewPort.xMax - viewPort.xMin;
-        const height = viewPort.yMax - viewPort.yMin;
-        const worldX = viewPort.xMin + ((mouseX - margin.left) / (rect.width - margin.left - margin.right)) * width;
-        const worldY = viewPort.yMax - ((mouseY - margin.top) / (rect.height - margin.top - margin.bottom)) * height;
-        const scale = (e.deltaY < 0) ? (1 / zoomFactor) : zoomFactor;
-        const newWidth = width * scale;
-        const newHeight = height * scale;
-        const newXMin = worldX - ((mouseX - margin.left) / (rect.width - margin.left - margin.right)) * newWidth;
-        const newYMax = worldY + ((mouseY - margin.top) / (rect.height - margin.top - margin.bottom)) * newHeight;
-        viewPort.xMin = newXMin;
-        viewPort.xMax = newXMin + newWidth;
-        viewPort.yMin = newYMax - newHeight;
-        viewPort.yMax = newYMax;
-
-        component.updateImage(viewPort);
-
-        e.preventDefault(); // Seiten-Scroll verhindern
-    }
-});
+      // Startposition des Viewport
+      const viewPort1 = { xMin: 0, yMin: 0, xMax: 4, yMax: 4 };
+      const viewPort2 = { xMin: 0, yMin: 0, xMax: 4, yMax: 4 };
+      const diagram1 = document.getElementById("diagram1");    
+      const diagram2 = document.getElementById("diagram2");    
+      diagram1.setInitialViewPort(viewPort1);
+      diagram2.setInitialViewPort(viewPort2);
+    
     }
   </script>
 </body>

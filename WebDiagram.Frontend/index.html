@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>WebDiagram</title>
+  <script src="web-diagram-frontend.js" defer></script>
   <style>
     body {
       font-family: sans-serif;
@@ -20,12 +21,18 @@
 <body>
   <h1>WebDiagram</h1>
   <p>Pfeiltasten bewegen den ViewPort. Bild wird vom Server gerendert.</p>
-  <img id="view" width="600" height="400" />
+  <web-diagram-frontend width="600" height="400" source="http://localhost:5000"></web-diagram-frontend>
+  
   <script>
-    const img = document.getElementById("view");
+    window.addEventListener("DOMContentLoaded", init);
+
+    function init() {
+      const component = document.querySelector("web-diagram-frontend");
+      const img = document.getElementById("view");
 
     // Startposition des Viewport
     const viewPort = { xMin: 0, yMin: 0, xMax: 4, yMax: 4 };
+    component.setInitialViewPort(viewPort);
     let margin = { top: 0, bottom: 0, left: 0, right: 0 };
 
     fetch("http://localhost:5000/config")
@@ -33,81 +40,6 @@
         .then(cfg => {
             margin = cfg.margin;
       });
-
-    function updateImage() {
-    const url = `http://localhost:5000/render?xMin=${viewPort.xMin}&xMax=${viewPort.xMax}&yMin=${viewPort.yMin}&yMax=${viewPort.yMax}`;
-    img.src = url;
-    }
-
-    // Initiales Bild
-    updateImage();
-
-    // Tastatureingaben auswerten
-    const stepX = 0.02;
-    const stepY = 0.02;
-    document.addEventListener("keydown", (e) => {
-    switch (e.key) {
-        case 'ArrowLeft':
-        viewPort.xMin += stepX;
-        viewPort.xMax += stepX;
-        break;
-        case 'ArrowRight':
-        viewPort.xMin -= stepX;
-        viewPort.xMax -= stepX;
-        break;
-        case 'ArrowUp':
-        viewPort.yMin -= stepY;
-        viewPort.yMax -= stepY;
-        break;
-        case 'ArrowDown':
-        viewPort.yMin += stepY;
-        viewPort.yMax += stepY;
-        break;
-        default:
-        return;
-    }
-    updateImage();
-    });
-
-    // Maus-Drag-Steuerung
-    let isDragging = false;
-    let lastMousePos = { x: 0, y: 0 };
-
-    img.addEventListener("mousedown", (e) => {
-        isDragging = true;
-        lastMousePos = { x: e.clientX, y: e.clientY };
-        e.preventDefault();
-    });
-
-    window.addEventListener("mouseup", () => {
-    isDragging = false;
-    });
-
-    window.addEventListener("mousemove", (e) => {
-    if (!isDragging) return;
-
-    const dx = e.clientX - lastMousePos.x;
-    const dy = e.clientY - lastMousePos.y;
-
-    lastMousePos = { x: e.clientX, y: e.clientY };
-
-    const widthPx = img.naturalWidth - margin.left - margin.right;
-    const heightPx = img.naturalHeight - margin.top - margin.bottom;
-
-    const xRange = viewPort.xMax - viewPort.xMin;
-    const yRange = viewPort.yMax - viewPort.yMin;
-
-    const scaleX = xRange / widthPx;
-    const scaleY = yRange / heightPx;
-
-    viewPort.xMin -= dx * scaleX;
-    viewPort.xMax -= dx * scaleX;
-
-    viewPort.yMin += dy * scaleY;
-    viewPort.yMax += dy * scaleY;
-
-    updateImage();
-    });
 
     const zoomFactor = 1.1;
     img.addEventListener('wheel', function (e) {
@@ -126,7 +58,7 @@
             viewPort.xMin = newXMin;
             viewPort.xMax = newXMin + newWidth;
 
-            updateImage();
+            component.updateImage(viewPort);
 
             e.preventDefault(); // Seiten-Scroll verhindern
         }
@@ -147,7 +79,7 @@
             viewPort.yMin = newYMax - newHeight;
             viewPort.yMax = newYMax;
 
-            updateImage();
+            component.updateImage(viewPort);
 
             e.preventDefault(); // Seiten-Scroll verhindern
         }
@@ -176,11 +108,12 @@
         viewPort.yMin = newYMax - newHeight;
         viewPort.yMax = newYMax;
 
-        updateImage();
+        component.updateImage(viewPort);
 
         e.preventDefault(); // Seiten-Scroll verhindern
     }
 });
+    }
   </script>
 </body>
 </html>

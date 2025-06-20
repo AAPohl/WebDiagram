@@ -14,6 +14,7 @@ class WebDiagramFrontend extends HTMLElement {
             .then(res => res.json())
             .then(cfg => {
                 this.margin = cfg.margin;
+                console.log('[Config] Margin geladen:', this.margin);
             });
 
         this.viewPort = { xMin: 0, yMin: 0, xMax: 1, yMax: 1 };
@@ -40,7 +41,30 @@ class WebDiagramFrontend extends HTMLElement {
 
     updateImage(viewPort) {
         const url = `${this.source}/render?xMin=${viewPort.xMin}&xMax=${viewPort.xMax}&yMin=${viewPort.yMin}&yMax=${viewPort.yMax}&width=${this.img.width}&height=${this.img.height}`;
-        this.img.src = url;
+    
+        fetch(url)
+          .then(res => {
+            if (!res.ok) throw new Error(); // Fehlerhafte Antworten (z.B. 500) still ignorieren
+            return res.blob();
+          })
+          .then(blob => {
+            if (blob && blob.size > 0) {
+              const objectURL = URL.createObjectURL(blob);
+              this.displayImage(objectURL);
+            }
+          })
+          .catch(() => {
+            // Fehler (z. B. 500) still ignorieren – kein Logging
+          });
+    }
+    
+
+    displayImage(objectURL) {
+        const img = this.img;
+        img.onload = () => {
+            URL.revokeObjectURL(img.src);  // Speicher freigeben
+        };
+        img.src = objectURL;
     }
 
     throttle(func, delay) {
@@ -48,8 +72,8 @@ class WebDiagramFrontend extends HTMLElement {
         return (...args) => {
             const now = Date.now();
             if (now - lastCall >= delay) {
-            lastCall = now;
-            func.apply(this, args);
+                lastCall = now;
+                func.apply(this, args);
             }
         };
     }

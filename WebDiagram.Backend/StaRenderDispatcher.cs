@@ -1,7 +1,6 @@
-
-
 using System.Runtime.InteropServices;
 using Renderer.Contract;
+using System.Threading;
 
 public class StaRenderDispatcher : IDisposable
 {
@@ -10,7 +9,15 @@ public class StaRenderDispatcher : IDisposable
     private readonly AutoResetEvent newJobEvent = new(false);
 
     private volatile bool running = true;
-    private RenderJob? latestJob;
+
+    // NEU: Lock für Thread-Sicherheit
+    private readonly object locker = new();
+
+    // NEU: aktuell laufender Job
+    private RenderJob? currentJob = null;
+
+    // NEU: nächster Job (wird laufendem Job vorgezogen, überschreibt evtl. ältere)
+    private RenderJob? nextJob = null;
 
     private class RenderJob
     {
@@ -28,7 +35,7 @@ public class StaRenderDispatcher : IDisposable
             IsBackground = true,
             Name = "STA Render Thread"
         };
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))    
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             staThread.SetApartmentState(ApartmentState.STA);
         staThread.Start();
     }
@@ -45,8 +52,20 @@ public class StaRenderDispatcher : IDisposable
             Height = height
         };
 
-        latestJob = job;
-        newJobEvent.Set();
+        lock (locker)
+        {
+            if (currentJob == null)
+            {
+                currentJob = job;
+                newJobEvent.Set();
+            }
+            else
+            {
+                // Verwerfe alten nextJob (optional: abbrechen)
+                nextJob?.CompletionSource.TrySetCanceled();
+                nextJob = job;
+            }
+        }
 
         return job.CompletionSource.Task;
     }
@@ -59,17 +78,37 @@ public class StaRenderDispatcher : IDisposable
 
             if (!running) break;
 
-            var job = Interlocked.Exchange(ref latestJob, null);
-            if (job is null) continue;
+            RenderJob? jobToRender;
+            lock (locker)
+            {
+                jobToRender = currentJob;
+            }
+
+            if (jobToRender == null)
+            {
+                newJobEvent.Reset();
+                continue;
+            }
 
             try
             {
-                var result = renderer.Render(job.XMin, job.XMax, job.YMin, job.YMax, job.Width, job.Height);
-                job.CompletionSource.TrySetResult(result);
+                var result = renderer.Render(jobToRender.XMin, jobToRender.XMax, jobToRender.YMin, jobToRender.YMax, jobToRender.Width, jobToRender.Height);
+                jobToRender.CompletionSource.TrySetResult(result);
             }
             catch (Exception ex)
             {
-                job.CompletionSource.TrySetException(ex);
+                jobToRender.CompletionSource.TrySetException(ex);
+            }
+
+            lock (locker)
+            {
+                currentJob = nextJob;
+                nextJob = null;
+
+                if (currentJob == null)
+                    newJobEvent.Reset();
+                else
+                    newJobEvent.Set();
             }
         }
     }
@@ -79,5 +118,6 @@ public class StaRenderDispatcher : IDisposable
         running = false;
         newJobEvent.Set();
         staThread.Join();
+        newJobEvent.Dispose();
     }
 }

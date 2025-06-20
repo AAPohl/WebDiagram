@@ -26,8 +26,18 @@ app.MapGet("/render", async (
     [FromQuery] int width,
     [FromQuery] int height) =>
 {
-    var imgBytes = await wrappedRenderer.RenderAsync(xMin, xMax, yMin, yMax, width, height);
-    return Results.File(imgBytes, "image/png");
+    try
+    {
+        var imgBytes = await wrappedRenderer.RenderAsync(xMin, xMax, yMin, yMax, width, height);
+        if (imgBytes == null || imgBytes.Length == 0)
+            return Results.NoContent();  // 204 No Content bei leerem Ergebnis
+
+        return Results.File(imgBytes, "image/png");
+    }
+    catch
+    {
+        return Results.NoContent();  // 204 No Content bei Fehler statt 500
+    }
 });
 
 // app.MapGet("/render", (

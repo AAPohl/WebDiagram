@@ -20,17 +20,17 @@ jobs:
         with:
           dotnet-version: '8.0.x'
   
-      - name: Restore Backend
-        run: dotnet restore WebDiagram.Backend/WebDiagram.Backend.csproj
+      - name: Restore App
+        run: dotnet restore WebDiagram.App/WebDiagram.App.csproj
   
-      - name: Build Backend
-        run: dotnet build WebDiagram.Backend/WebDiagram.Backend.csproj --configuration Release --no-restore
+      - name: Build App
+        run: dotnet build WebDiagram.App/WebDiagram.App.csproj --configuration Release --no-restore
 
-      - name: Publish Backend
-        run: dotnet publish WebDiagram.Backend/WebDiagram.Backend.csproj -c Release -o ./publish/Backend
+      - name: Publish App
+        run: dotnet publish WebDiagram.App/WebDiagram.App.csproj -c Release -o ./publish/App
 
-      - name: Publish Frontend
-        run: cp WebDiagram.Frontend/index.html ./publish/index.html
+      #- name: Publish Frontend
+      #  run: cp WebDiagram.Frontend/index.html ./publish/index.html
         
       - name: Upload Backend
         uses: actions/upload-artifact@v4

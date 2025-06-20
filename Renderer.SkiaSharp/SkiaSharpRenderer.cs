@@ -1,6 +1,7 @@
+using Renderer.Contract;
 using SkiaSharp;
 
-public class Renderer
+public class SkiaSharpRenderer : IRenderer
 {
     public Margin Margin { get; set; } = new Margin(40, 40, 40, 40);
     public byte[] Render(float xMin, float xMax, float yMin, float yMax, int width, int height)

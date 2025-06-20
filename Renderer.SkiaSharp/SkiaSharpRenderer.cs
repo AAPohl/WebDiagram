@@ -26,6 +26,7 @@ public class SkiaSharpRenderer : IRenderer
 
         using var image = SKImage.FromBitmap(bitmap);
         using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        Thread.Sleep(2000);
         return data.ToArray();
     }
 

@@ -1,11 +1,10 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Renderer.Contract;
 namespace WebDiagram.Backend;
 
 public static class EndpointRegistrar
 {
-    public static void MapWebDiagramApi(this WebApplication app, Renderer render)
+    public static void MapWebDiagramApi(this WebApplication app, IRenderer render)
     {
         app.MapGet("/render", (
             [FromQuery] float xMin,

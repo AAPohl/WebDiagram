@@ -16,7 +16,7 @@ app.MapGet("/", context =>
     return Task.CompletedTask;
 });
 
-var renderer = new Renderer();
+var renderer = new SkiaSharpRenderer();
 app.MapWebDiagramApi(renderer);
 
 app.Run();

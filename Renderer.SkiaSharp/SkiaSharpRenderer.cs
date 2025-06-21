@@ -1,6 +1,7 @@
+using Renderer.Contract;
 using SkiaSharp;
 
-public class Renderer
+public class SkiaSharpRenderer : IRenderer
 {
     public Margin Margin { get; set; } = new Margin(40, 40, 40, 40);
     public byte[] Render(float xMin, float xMax, float yMin, float yMax, int width, int height)
@@ -25,6 +26,7 @@ public class Renderer
 
         using var image = SKImage.FromBitmap(bitmap);
         using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        Thread.Sleep(2000);
         return data.ToArray();
     }
 

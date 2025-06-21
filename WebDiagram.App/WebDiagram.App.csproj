@@ -6,8 +6,8 @@
     <EnableDefaultContentItems>false</EnableDefaultContentItems>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="SkiaSharp" Version="3.119.0" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.0" />
+    <ProjectReference Include="..\Renderer.Contract\Renderer.Contract.csproj" />
+    <ProjectReference Include="..\Renderer.SkiaSharp\Renderer.SkiaSharp.csproj" />
     <ProjectReference Include="..\WebDiagram.Backend\WebDiagram.Backend.csproj" />
     <Content Include="..\WebDiagram.Frontend\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

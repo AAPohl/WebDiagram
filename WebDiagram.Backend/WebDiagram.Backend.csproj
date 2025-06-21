@@ -9,4 +9,7 @@
     <PackageReference Include="SkiaSharp" Version="3.119.0" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.0" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Renderer.Contract\Renderer.Contract.csproj" />
+  </ItemGroup>
 </Project>

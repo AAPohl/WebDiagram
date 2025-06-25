@@ -1,5 +1,7 @@
+using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Renderer.Contract;
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
@@ -21,14 +23,18 @@ app.MapGet("/", context =>
 app.MapHub<DiagramHub>("/diagramhub");
 var hubContext = app.Services.GetRequiredService<IHubContext<DiagramHub>>();
 
-var renderer = new SkiaSharpRenderer(24, image => hubContext.Clients.All.SendAsync("ReceiveImage", Convert.ToBase64String(image)).GetAwaiter().GetResult());
-app.MapGet("/updateSize", (
+var renderers = new Dictionary<string, IRenderer>();
+renderers.Add("diagram1", new SkiaSharpRenderer(24, image => hubContext.Clients.Group("diagram1").SendAsync("ReceiveImage", Convert.ToBase64String(image)).GetAwaiter().GetResult()));
+renderers.Add("diagram2", new SkiaSharpRenderer(24, image => hubContext.Clients.Group("diagram2").SendAsync("ReceiveImage", Convert.ToBase64String(image)).GetAwaiter().GetResult()));
+
+app.MapGet("/{instanceId}/updateSize", (
+	string instanceId,
 	[FromQuery] int width,
 	[FromQuery] int height) =>
 {
 	try
 	{
-        renderer.UpdateSize(width, height);
+        renderers[instanceId].UpdateSize(width, height);
 		return Results.Ok();
 	}
 	catch
@@ -37,15 +43,16 @@ app.MapGet("/updateSize", (
 	}
 });
 
-app.MapGet("/updateViewPort", (
-	[FromQuery] float xMin,
+app.MapGet("/{instanceId}/updateViewPort", (
+	string instanceId,
+    [FromQuery] float xMin,
 	[FromQuery] float xMax,
 	[FromQuery] float yMin,
 	[FromQuery] float yMax) =>
 {
 	try
 	{
-		renderer.UpdateViewport(xMin, xMax, yMin, yMax);
+		renderers[instanceId].UpdateViewport(xMin, xMax, yMin, yMax);
 		return Results.Ok();
 	}
 	catch
@@ -54,24 +61,27 @@ app.MapGet("/updateViewPort", (
 	}
 });
 
-app.MapGet("/config", () =>
+app.MapGet("/{instanceId}/config", (
+    string instanceId) =>
 {
     var margin = new
     {
-        top = renderer.Margin.Top,
-        bottom = renderer.Margin.Bottom,
-        left = renderer.Margin.Left,
-        right = renderer.Margin.Right
+        top = renderers[instanceId].Margin.Top,
+        bottom = renderers[instanceId].Margin.Bottom,
+        left = renderers[instanceId].Margin.Left,
+        right = renderers[instanceId].Margin.Right
     };
 
     return Results.Json(new { margin });
 });
 
-renderer.Start();
+foreach(var renderer in renderers)
+	renderer.Value.Start();
 
 app.Lifetime.ApplicationStopping.Register(() =>
 {
-	renderer.Stop();
+	foreach(var renderer in renderers)
+	renderer.Value.Stop();
 });
 
 app.Run();

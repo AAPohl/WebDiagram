@@ -1,5 +1,9 @@
 class WebDiagramFrontend extends HTMLElement {
-    connectedCallback() {
+    async connectedCallback() {
+        if (typeof signalR === 'undefined') {
+            await this.loadScript("https://cdn.jsdelivr.net/npm/@microsoft/signalr@7.0.5/dist/browser/signalr.min.js");
+        }
+
         this.img = document.createElement('img');
         this.img.id = "view";
         this.img.width = this.getAttribute("width") || 100;
@@ -25,57 +29,49 @@ class WebDiagramFrontend extends HTMLElement {
         this.stepY = 0.02;
         this.zoomFactor = 1.1;
 
-        this.throttledUpdateImage = this.throttle(this.updateImage.bind(this), 30);
-
         this.img.addEventListener("mousedown", this.startDrag.bind(this));
         window.addEventListener("mouseup", this.stopDrag.bind(this));
         window.addEventListener("mousemove", this.dragMove.bind(this));
         window.addEventListener("keydown", this.handleKeyDown.bind(this));
         this.img.addEventListener("wheel", this.handleWheel.bind(this));
+        this.updateViewPort(this.viewPort);
+        this.updateSize(this.img.width, this.img.height);
+
+        this.connection = new signalR.HubConnectionBuilder()
+            .withUrl(`${this.source.replace(/\/$/, '')}/diagramhub`)
+            .withAutomaticReconnect()
+            .build();
+
+        this.connection.on("ReceiveImage", base64Image => {
+            this.img.src = "data:image/png;base64," + base64Image;
+        });
+
+        this.connection.start();
+    }
+
+    loadScript(src) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
     }
 
     setInitialViewPort(viewPort) {
         this.viewPort = viewPort;
-        this.updateImage(viewPort);  // Initial synchron
+        this.updateViewPort(viewPort);
     }
 
-    updateImage(viewPort) {
-        const url = `${this.source}/render?xMin=${viewPort.xMin}&xMax=${viewPort.xMax}&yMin=${viewPort.yMin}&yMax=${viewPort.yMax}&width=${this.img.width}&height=${this.img.height}`;
-    
-        fetch(url)
-          .then(res => {
-            if (!res.ok) throw new Error(); // Fehlerhafte Antworten (z.B. 500) still ignorieren
-            return res.blob();
-          })
-          .then(blob => {
-            if (blob && blob.size > 0) {
-              const objectURL = URL.createObjectURL(blob);
-              this.displayImage(objectURL);
-            }
-          })
-          .catch(() => {
-            // Fehler (z. B. 500) still ignorieren – kein Logging
-          });
-    }
-    
-
-    displayImage(objectURL) {
-        const img = this.img;
-        img.onload = () => {
-            URL.revokeObjectURL(img.src);  // Speicher freigeben
-        };
-        img.src = objectURL;
+    updateViewPort(viewPort) {
+        const url = `${this.source}/updateViewPort?xMin=${viewPort.xMin}&xMax=${viewPort.xMax}&yMin=${viewPort.yMin}&yMax=${viewPort.yMax}`;
+        fetch(url);
     }
 
-    throttle(func, delay) {
-        let lastCall = 0;
-        return (...args) => {
-            const now = Date.now();
-            if (now - lastCall >= delay) {
-                lastCall = now;
-                func.apply(this, args);
-            }
-        };
+    updateSize(width, height) {
+        const url = `${this.source}/updateSize?width=${width}&height=${height}`;
+        fetch(url);
     }
 
     startDrag(e) {
@@ -109,8 +105,9 @@ class WebDiagramFrontend extends HTMLElement {
     
         this.viewPort.yMin += dy * scaleY;
         this.viewPort.yMax += dy * scaleY;
-    
-        this.throttledUpdateImage(this.viewPort);
+
+        this.updateViewPort(this.viewPort);
+        this.updateSize(this.img.width, this.img.height);
     }
 
     handleKeyDown(e) {
@@ -136,8 +133,9 @@ class WebDiagramFrontend extends HTMLElement {
             default:
                 return;
         }
-    
-        this.updateImage(this.viewPort);  // synchron, da seltener
+
+        this.updateViewPort(this.viewPort);
+        this.updateSize(this.img.width, this.img.height);
     }
 
     handleWheel(e) {
@@ -155,7 +153,8 @@ class WebDiagramFrontend extends HTMLElement {
             const newXMin = worldX - ((mouseX - this.margin.left) / (rect.width - this.margin.left - this.margin.right)) * newWidth;
             this.viewPort.xMin = newXMin;
             this.viewPort.xMax = newXMin + newWidth;
-            this.throttledUpdateImage(this.viewPort);
+            this.updateViewPort(this.viewPort);
+            this.updateSize(this.img.width, this.img.height);
             e.preventDefault();
             return;
         }
@@ -166,7 +165,8 @@ class WebDiagramFrontend extends HTMLElement {
             const newYMax = worldY + ((mouseY - this.margin.top) / (rect.height - this.margin.top - this.margin.bottom)) * newHeight;
             this.viewPort.yMin = newYMax - newHeight;
             this.viewPort.yMax = newYMax;
-            this.throttledUpdateImage(this.viewPort);
+            this.updateViewPort(this.viewPort);
+            this.updateSize(this.img.width, this.img.height);
             e.preventDefault();
             return;
         }
@@ -185,7 +185,8 @@ class WebDiagramFrontend extends HTMLElement {
             this.viewPort.xMax = newXMin + newWidth;
             this.viewPort.yMin = newYMax - newHeight;
             this.viewPort.yMax = newYMax;
-            this.throttledUpdateImage(this.viewPort);
+            this.updateViewPort(this.viewPort);
+            this.updateSize(this.img.width, this.img.height);
             e.preventDefault();
         }
     }    

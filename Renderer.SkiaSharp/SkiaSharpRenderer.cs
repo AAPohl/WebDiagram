@@ -1,6 +1,7 @@
+using Renderer.Contract;
 using SkiaSharp;
 
-public class SkiaSharpRenderer
+public class SkiaSharpRenderer : IRenderer
 {
 	private readonly Action<byte[]> renderAction;
 	private readonly int maxFps;

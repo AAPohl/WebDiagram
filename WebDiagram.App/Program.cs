@@ -1,7 +1,5 @@
-using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Renderer.Contract;
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
@@ -23,10 +21,9 @@ app.MapGet("/", context =>
 app.MapHub<DiagramHub>("/diagramhub");
 var hubContext = app.Services.GetRequiredService<IHubContext<DiagramHub>>();
 
-var renderers = new Dictionary<string, IRenderer>();
-renderers.Add("diagram1", new SkiaSharpRenderer(24, image => hubContext.Clients.Group("diagram1").SendAsync("ReceiveImage", Convert.ToBase64String(image)).GetAwaiter().GetResult()));
-renderers.Add("diagram2", new SkiaSharpRenderer(24, image => hubContext.Clients.Group("diagram2").SendAsync("ReceiveImage", Convert.ToBase64String(image)).GetAwaiter().GetResult()));
-
+var diagramManager = new DiagramManager(hubContext);
+diagramManager.AddRenderer("diagram1", renderAction => new SkiaSharpRenderer(24, renderAction));
+diagramManager.AddRenderer("diagram2", renderAction => new SkiaSharpRenderer(24, renderAction));
 app.MapGet("/{instanceId}/updateSize", (
 	string instanceId,
 	[FromQuery] int width,
@@ -34,7 +31,7 @@ app.MapGet("/{instanceId}/updateSize", (
 {
 	try
 	{
-        renderers[instanceId].UpdateSize(width, height);
+        diagramManager.GetRenderer(instanceId).UpdateSize(width, height);
 		return Results.Ok();
 	}
 	catch
@@ -52,7 +49,7 @@ app.MapGet("/{instanceId}/updateViewPort", (
 {
 	try
 	{
-		renderers[instanceId].UpdateViewport(xMin, xMax, yMin, yMax);
+		diagramManager.GetRenderer(instanceId).UpdateViewport(xMin, xMax, yMin, yMax);
 		return Results.Ok();
 	}
 	catch
@@ -66,22 +63,20 @@ app.MapGet("/{instanceId}/config", (
 {
     var margin = new
     {
-        top = renderers[instanceId].Margin.Top,
-        bottom = renderers[instanceId].Margin.Bottom,
-        left = renderers[instanceId].Margin.Left,
-        right = renderers[instanceId].Margin.Right
+        top = diagramManager.GetRenderer(instanceId).Margin.Top,
+        bottom = diagramManager.GetRenderer(instanceId).Margin.Bottom,
+        left = diagramManager.GetRenderer(instanceId).Margin.Left,
+        right = diagramManager.GetRenderer(instanceId).Margin.Right
     };
 
     return Results.Json(new { margin });
 });
 
-foreach(var renderer in renderers)
-	renderer.Value.Start();
+diagramManager.Start();
 
 app.Lifetime.ApplicationStopping.Register(() =>
 {
-	foreach(var renderer in renderers)
-	renderer.Value.Stop();
+	diagramManager.Stop();
 });
 
 app.Run();

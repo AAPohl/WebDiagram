@@ -1,3 +1,5 @@
+import { createSignalRConnection } from './signalr-client.js';
+
 class WebDiagramFrontend extends HTMLElement {
     async connectedCallback() {
         if (typeof signalR === 'undefined') {
@@ -37,16 +39,10 @@ class WebDiagramFrontend extends HTMLElement {
         this.updateViewPort(this.viewPort);
         this.updateSize(this.img.width, this.img.height);
 
-        this.connection = new signalR.HubConnectionBuilder()
-            .withUrl(`${this.source.replace(/\/$/, '')}/diagramhub`)
-            .withAutomaticReconnect()
-            .build();
-
-        this.connection.on("ReceiveImage", base64Image => {
-            this.img.src = "data:image/png;base64," + base64Image;
-        });
-
-        this.connection.start();
+        this.connection = await createSignalRConnection(
+            `${this.source.replace(/\/$/, '')}/diagramhub`,
+            image => this.img.src = image
+        );
     }
 
     loadScript(src) {

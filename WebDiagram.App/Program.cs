@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     ContentRootPath = AppContext.BaseDirectory,
     WebRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot")
 });
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -16,41 +18,41 @@ app.MapGet("/", context =>
     return Task.CompletedTask;
 });
 
-var renderer = new SkiaSharpRenderer();
-var wrappedRenderer = new StaRenderDispatcher(renderer);
-app.MapGet("/render", async (
-    [FromQuery] float xMin,
-    [FromQuery] float xMax,
-    [FromQuery] float yMin,
-    [FromQuery] float yMax,
-    [FromQuery] int width,
-    [FromQuery] int height) =>
-{
-    try
-    {
-        var imgBytes = await wrappedRenderer.RenderAsync(xMin, xMax, yMin, yMax, width, height);
-        if (imgBytes == null || imgBytes.Length == 0)
-            return Results.NoContent();  // 204 No Content bei leerem Ergebnis
+app.MapHub<DiagramHub>("/diagramhub");
+var hubContext = app.Services.GetRequiredService<IHubContext<DiagramHub>>();
 
-        return Results.File(imgBytes, "image/png");
-    }
-    catch
-    {
-        return Results.NoContent();  // 204 No Content bei Fehler statt 500
-    }
+var renderer = new SkiaSharpRenderer(24, image => hubContext.Clients.All.SendAsync("ReceiveImage", Convert.ToBase64String(image)).GetAwaiter().GetResult());
+app.MapGet("/updateSize", (
+	[FromQuery] int width,
+	[FromQuery] int height) =>
+{
+	try
+	{
+        renderer.UpdateSize(width, height);
+		return Results.Ok();
+	}
+	catch
+	{
+        return Results.Problem();
+	}
 });
 
-// app.MapGet("/render", (
-//     [FromQuery] float xMin,
-//     [FromQuery] float xMax,
-//     [FromQuery] float yMin,
-//     [FromQuery] float yMax,
-//     [FromQuery] int width,
-//     [FromQuery] int height) =>
-// {
-//     var imgBytes = renderer.Render(xMin, xMax, yMin, yMax, width, height);
-//     return Results.File(imgBytes, "image/png");
-// });
+app.MapGet("/updateViewPort", (
+	[FromQuery] float xMin,
+	[FromQuery] float xMax,
+	[FromQuery] float yMin,
+	[FromQuery] float yMax) =>
+{
+	try
+	{
+		renderer.UpdateViewport(xMin, xMax, yMin, yMax);
+		return Results.Ok();
+	}
+	catch
+	{
+		return Results.Problem();
+	}
+});
 
 app.MapGet("/config", () =>
 {
@@ -63,6 +65,13 @@ app.MapGet("/config", () =>
     };
 
     return Results.Json(new { margin });
+});
+
+renderer.Start();
+
+app.Lifetime.ApplicationStopping.Register(() =>
+{
+	renderer.Stop();
 });
 
 app.Run();

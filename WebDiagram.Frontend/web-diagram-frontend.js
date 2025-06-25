@@ -21,7 +21,6 @@ class WebDiagramFrontend extends HTMLElement {
             .then(res => res.json())
             .then(cfg => {
                 this.margin = cfg.margin;
-                console.log('[Config] Margin geladen:', this.margin);
             });
 
         // ViewportController initialisieren

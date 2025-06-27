@@ -11,6 +11,18 @@ export class ViewportController {
         this.zoomFactor = 1.1;
         this.isDragging = false;
         this.lastMousePos = { x: 0, y: 0 };
+
+        // gebundene Methoden für spätere Verwendung in removeEventListener
+        this.boundStartDrag = this.startDrag.bind(this);
+        this.boundStopDrag = this.stopDrag.bind(this);
+        this.boundDragMove = this.dragMove.bind(this);
+        this.boundHandleKeyDown = this.handleKeyDown.bind(this);
+        this.boundHandleWheel = this.handleWheel.bind(this);
+
+        // Event-Registrierung
+        this.img.addEventListener("mousedown", this.boundStartDrag);
+        this.img.addEventListener("wheel", this.boundHandleWheel, { passive: false });
+        window.addEventListener("keydown", this.boundHandleKeyDown);
     }
 
     setInitialViewPort(viewPort) {
@@ -21,11 +33,15 @@ export class ViewportController {
     startDrag(e) {
         this.isDragging = true;
         this.lastMousePos = { x: e.clientX, y: e.clientY };
+        window.addEventListener("mousemove", this.boundDragMove);
+        window.addEventListener("mouseup", this.boundStopDrag);
         e.preventDefault();
     }
 
     stopDrag() {
         this.isDragging = false;
+        window.removeEventListener("mousemove", this.boundDragMove);
+        window.removeEventListener("mouseup", this.boundStopDrag);
     }
 
     dragMove(e) {
@@ -126,5 +142,16 @@ export class ViewportController {
             const newHeight = height * scale;
             applyZoom(worldX, worldY, newWidth, newHeight);
         }
+    }
+
+    destroy() {
+        // Events am img entfernen
+        this.img.removeEventListener("mousedown", this.boundStartDrag);
+        this.img.removeEventListener("wheel", this.boundHandleWheel);
+        window.removeEventListener("keydown", this.boundHandleKeyDown);
+
+        // Falls Drag noch aktiv ist, auch globale Events entfernen
+        window.removeEventListener("mousemove", this.boundDragMove);
+        window.removeEventListener("mouseup", this.boundStopDrag);
     }
 }

@@ -23,7 +23,6 @@ class WebDiagramFrontend extends HTMLElement {
         this.img.height = this.getAttribute("height") || 100;
         this.img.style.border = "2px solid #555";
         this.img.style.background = "black";
-
         this.appendChild(this.img);
 
         // HoverController initialisieren
@@ -34,29 +33,37 @@ class WebDiagramFrontend extends HTMLElement {
             updateHover: (hoverPos) => this.updateHover(hoverPos)
         });
 
-        // ViewportController initialisieren
+        // ViewportController initialisieren (inkl. Event-Registrierung intern)
         this.viewportController = new ViewportController({
             imgElement: this.img,
             getMargin: () => this.margin,
-            updateViewPort: (vp) => this.updateViewPort(vp)
+            updateViewPort: (vp) => this.updateViewPort(vp),
+            updateSize: (w, h) => this.updateSize(w, h)
         });
 
-        // Event Delegation an ViewportController
-        this.img.addEventListener("mousedown", e => this.viewportController.startDrag(e));
-        window.addEventListener("mouseup", () => this.viewportController.stopDrag());
-        window.addEventListener("mousemove", e => this.viewportController.dragMove(e));
-        window.addEventListener("keydown", e => this.viewportController.handleKeyDown(e));
-        this.img.addEventListener("wheel", e => this.viewportController.handleWheel(e));
-        
         this.viewportController.setInitialViewPort({ xMin: 0, yMin: 0, xMax: 1, yMax: 1 });
         this.updateSize(this.img.width, this.img.height);
-             
+
+        // SignalR-Verbindung aufbauen
         this.connection = await createSignalRConnection(
             `${this.baseUrl}/diagramhub`,
             image => this.img.src = image
         );
         await this.connection.invoke("JoinInstanceGroup", this.getAttribute("id"));
+    }
 
+    disconnectedCallback() {
+        if (this.viewportController) {
+            this.viewportController.destroy(); // Event-Listener sauber entfernen
+        }
+
+        if (this.hoverController) {
+            this.hoverController.destroy(); // ebenfalls aufräumen
+        }
+
+        if (this.connection) {
+            this.connection.stop(); // SignalR-Verbindung trennen
+        }
     }
 
     loadScript(src) {
@@ -81,12 +88,12 @@ class WebDiagramFrontend extends HTMLElement {
     updateSize(width, height) {
         const url = `${this.baseUrl}${this.instancePath}/updateSize?width=${width}&height=${height}`;
         fetch(url);
-    } 
-    
-    updateHover(hoverPos){
+    }
+
+    updateHover(hoverPos) {
         const url = `${this.baseUrl}${this.instancePath}/updateHover?x=${hoverPos.x}&y=${hoverPos.y}`;
         fetch(url);
-    }   
+    }
 }
 
 customElements.define('web-diagram-frontend', WebDiagramFrontend);

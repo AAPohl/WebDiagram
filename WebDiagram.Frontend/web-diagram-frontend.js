@@ -1,5 +1,6 @@
 import { createSignalRConnection } from './signalr-client.js';
 import { ViewportController } from './viewport-controller.js';
+import { HoverController } from './hover-controller.js';
 
 class WebDiagramFrontend extends HTMLElement {
     async connectedCallback() {
@@ -25,7 +26,14 @@ class WebDiagramFrontend extends HTMLElement {
 
         this.appendChild(this.img);
 
-        
+        // HoverController initialisieren
+        this.hoverController = new HoverController({
+            imgElement: this.img,
+            getMargin: () => this.margin,
+            getViewPort: () => this.viewportController.viewPort,
+            updateHover: (hoverPos) => this.updateHover(hoverPos)
+        });
+
         // ViewportController initialisieren
         this.viewportController = new ViewportController({
             imgElement: this.img,
@@ -73,7 +81,12 @@ class WebDiagramFrontend extends HTMLElement {
     updateSize(width, height) {
         const url = `${this.baseUrl}${this.instancePath}/updateSize?width=${width}&height=${height}`;
         fetch(url);
-    }    
+    } 
+    
+    updateHover(hoverPos){
+        const url = `${this.baseUrl}${this.instancePath}/updateHover?x=${hoverPos.x}&y=${hoverPos.y}`;
+        fetch(url);
+    }   
 }
 
 customElements.define('web-diagram-frontend', WebDiagramFrontend);

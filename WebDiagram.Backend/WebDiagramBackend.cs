@@ -54,6 +54,22 @@ public class WebDiagramBackend
             }
         });
 
+        webApplication.MapGet("/{instanceId}/updateHover", (
+            string instanceId,
+            [FromQuery] float x,
+            [FromQuery] float y) =>
+        {
+            try
+            {
+                Console.WriteLine($"x: {x}, y: {y}");
+                return Results.Ok();
+            }
+            catch
+            {
+                return Results.Problem();
+            }
+        });
+
         webApplication.MapGet("/{instanceId}/config", (
             string instanceId) =>
         {

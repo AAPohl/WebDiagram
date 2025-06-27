@@ -61,7 +61,7 @@ public class WebDiagramBackend
         {
             try
             {
-                Console.WriteLine($"x: {x}, y: {y}");
+                renderer[instanceId].UpdateHover(x, y);
                 return Results.Ok();
             }
             catch

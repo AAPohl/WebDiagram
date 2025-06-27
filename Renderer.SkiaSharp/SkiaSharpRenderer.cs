@@ -10,6 +10,8 @@ public class SkiaSharpRenderer : IRenderer
 
 	public Margin Margin { get; set; } = new Margin(40, 40, 40, 40);
     private RenderInfo renderInfo;
+	private float hoverX;
+	private float hoverY;
 	public SkiaSharpRenderer(int maxFps, Action<byte[]> renderAction)
 	{
 		this.renderAction = renderAction;
@@ -70,26 +72,38 @@ public class SkiaSharpRenderer : IRenderer
 		float pixelsPerYUnit = (height - Margin.Top - Margin.Bottom) / renderInfo.ViewPort.RangeY();
 		renderInfo = new RenderInfo(Margin, width, height, pixelsPerXUnit, pixelsPerYUnit, renderInfo.ViewPort);
 	}
+
+	public void UpdateHover(float x, float y)
+	{
+		hoverX = x;	
+		hoverY = y;
+	}
 	public byte[] Render()
-    {
-        using var bitmap = new SKBitmap(renderInfo.Width, renderInfo.Height);
-        using var canvas = new SKCanvas(bitmap);
+	{
+		using var bitmap = new SKBitmap(renderInfo.Width, renderInfo.Height);
+		using var canvas = new SKCanvas(bitmap);
 
-        canvas.Clear(SKColors.White);
-        AxisRendering.DrawAxes(canvas, renderInfo);
-        AxisRendering.DrawTicksAndLabels(canvas, renderInfo);
+		canvas.Clear(SKColors.White);
+		AxisRendering.DrawAxes(canvas, renderInfo);
+		AxisRendering.DrawTicksAndLabels(canvas, renderInfo);
 
-        DataRendering.DrawSine(canvas, renderInfo, 1f, 1f, 0f, SKColors.Red);
-        DataRendering.DrawSine(canvas, renderInfo, 0.5f, 2f, (float)Math.PI / 4, SKColors.Green);
-        DataRendering.DrawCross(canvas, renderInfo, 1f, 0.5f, 5, SKColors.Blue);
+		var hovered = DataRendering.IsNearSine(hoverX, hoverY, 1f, 1f, 0f, 0.01f);
+		DataRendering.DrawSine(canvas, renderInfo, 1f, 1f, 0f, SKColors.Red, hovered);
 
-        DrawLabel(canvas, Margin.Left / 2, Margin.Top / 2, $"View X:[{renderInfo.ViewPort.XMin:0.00},{renderInfo.ViewPort.XMax:0.00}] Y:[{renderInfo.ViewPort.YMin:0.00},{renderInfo.ViewPort.YMax:0.00}] Width:[{renderInfo.Width}] Height:[{renderInfo.Height}]");
+		hovered = DataRendering.IsNearSine(hoverX, hoverY, 0.5f, 2f, (float)Math.PI / 4, 0.01f);
+		DataRendering.DrawSine(canvas, renderInfo, 0.5f, 2f, (float)Math.PI / 4, SKColors.Green, hovered);
 
-        using var image = SKImage.FromBitmap(bitmap);
-        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
 
-        return data.ToArray();
-    }
+		hovered = DataRendering.IsNearCross(hoverX, hoverY, 1f, 0.5f, 5, 0.01f);
+		DataRendering.DrawCross(canvas, renderInfo, 1f, 0.5f, 5, SKColors.Blue, hovered);
+
+		DrawLabel(canvas, Margin.Left / 2, Margin.Top / 2, $"View X:[{renderInfo.ViewPort.XMin:0.00},{renderInfo.ViewPort.XMax:0.00}] Y:[{renderInfo.ViewPort.YMin:0.00},{renderInfo.ViewPort.YMax:0.00}] Width:[{renderInfo.Width}] Height:[{renderInfo.Height}]");
+
+		using var image = SKImage.FromBitmap(bitmap);
+		using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+
+		return data.ToArray();
+	}
 
     private static void DrawLabel(SKCanvas canvas, int x, int y, string text)
     {

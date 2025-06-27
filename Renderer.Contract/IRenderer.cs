@@ -6,7 +6,8 @@ namespace Renderer.Contract
 
 		void Start();
 		void Stop();
-        void UpdateSize(int width, int height);
-        void UpdateViewport(float xMin, float xMax, float yMin, float yMax);
+		void UpdateSize(int width, int height);
+		void UpdateViewport(float xMin, float xMax, float yMin, float yMax);
+		void UpdateHover(float x, float y);
     }
 }

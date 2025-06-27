@@ -3,7 +3,7 @@ using SkiaSharp;
 public static class DataRendering
 {
     public static void DrawCross(SKCanvas canvas, RenderInfo renderInfo,
-        float x, float y, float size, SKColor color)
+        float x, float y, float size, SKColor color, bool hovered)
     {
         float px = renderInfo.ToGlobalX(x);
         float py = renderInfo.ToGlobalY(y);
@@ -11,7 +11,7 @@ public static class DataRendering
         using var paint = new SKPaint
         {
             Color = color,
-            StrokeWidth = 2,
+            StrokeWidth = hovered ? 4 : 2,
             IsAntialias = true
         };
 
@@ -19,13 +19,61 @@ public static class DataRendering
         canvas.DrawLine(px - size, py + size, px + size, py - size, paint);
     }
 
+    public static bool IsNearCross(float hoverX, float hoverY, float x, float y, float size, float v)
+    {
+        // Punkte des Kreuzes (im selben Koordinatensystem wie hoverX, hoverY)
+        float x1a = x - size;
+        float y1a = y - size;
+        float x1b = x + size;
+        float y1b = y + size;
+
+        float x2a = x - size;
+        float y2a = y + size;
+        float x2b = x + size;
+        float y2b = y - size;
+
+        var p = new SKPoint(hoverX, hoverY);
+        var a1 = new SKPoint(x1a, y1a);
+        var b1 = new SKPoint(x1b, y1b);
+        var a2 = new SKPoint(x2a, y2a);
+        var b2 = new SKPoint(x2b, y2b);
+
+        float dist1 = DistancePointToLine(p, a1, b1);
+        float dist2 = DistancePointToLine(p, a2, b2);
+
+        return dist1 <= v || dist2 <= v;
+    }
+
+    private static float DistancePointToLine(SKPoint p, SKPoint a, SKPoint b)
+    {
+        float dx = b.X - a.X;
+        float dy = b.Y - a.Y;
+
+        if (dx == 0 && dy == 0)
+            return Distance(p, a);
+
+        float t = ((p.X - a.X) * dx + (p.Y - a.Y) * dy) / (dx * dx + dy * dy);
+        t = MathF.Max(0, MathF.Min(1, t));
+
+        float projX = a.X + t * dx;
+        float projY = a.Y + t * dy;
+
+        return Distance(p, new SKPoint(projX, projY));
+    }
+
+    private static float Distance(SKPoint p1, SKPoint p2)
+    {
+        return MathF.Sqrt((p1.X - p2.X) * (p1.X - p2.X) + (p1.Y - p2.Y) * (p1.Y - p2.Y));
+    }
+
+
     public static void DrawSine(SKCanvas canvas, RenderInfo renderInfo,
-        float amplitude, float frequency, float phase, SKColor color)
+        float amplitude, float frequency, float phase, SKColor color, bool hovered)
     {
         using var paint = new SKPaint
         {
             Color = color,
-            StrokeWidth = 2,
+            StrokeWidth = hovered ? 4 : 2,
             IsAntialias = true,
             Style = SKPaintStyle.Stroke
         };
@@ -62,5 +110,14 @@ public static class DataRendering
         }
 
         canvas.DrawPath(path, paint);
+    }
+
+    public static bool IsNearSine(float hoverX, float hoverY, float amplitude, float frequency, float phase, float v)
+    {
+        // Berechne Kurven-y am Punkt x
+        float yCurve = amplitude * MathF.Sin(frequency * hoverX + phase);
+
+        // Prüfe Abstand
+        return MathF.Abs(hoverY - yCurve) <= v;
     }
 }
